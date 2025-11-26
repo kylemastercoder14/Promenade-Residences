@@ -1,28 +1,25 @@
 "use client";
 
 import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Logo } from "@/components/logo";
-import { Facebook, Instagram, Linkedin, Twitter, XIcon } from "lucide-react";
 import Image from 'next/image';
 
 const footerLinks = [
   {
     title: "General",
     items: [
-      { label: "Monthly Due", href: "#monthly-due" },
-      { label: "Amenity Reservation", href: "#amenity-reservation" },
-      { label: "Lot Availabilities", href: "#lot-availabilities" },
-      { label: "Feedback", href: "/feedback" },
+      { label: "Monthly Due", href: "/monthly-due" },
+      { label: "Amenity Reservation", href: "/amenities-reservation" },
+      { label: "Lot Availabilities", href: "/lot-availabilities" },
+      { label: "Feedback", href: "#feedback" },
     ],
   },
   {
     title: "Help",
     items: [
-      { label: "FAQs", href: "#faqs" },
+      { label: "FAQs", href: "/faqs" },
 	  { label: "About", href: "#about" },
-      { label: "Contact Us", href: "#contact-us" },
+      { label: "Contact Us", href: "/contact-us" },
     ],
   },
   {

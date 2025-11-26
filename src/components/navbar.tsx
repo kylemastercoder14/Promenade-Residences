@@ -11,18 +11,19 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useRouter } from 'next/navigation';
 
 const navLinks = [
-  { label: "What’s New", href: "#news" },
+  { label: "What’s New", href: "/community" },
   { label: "Announcement", href: "#announcements" },
-  { label: "Contact Us", href: "#contact" },
-  { label: "Feedback", href: "/feedback" },
+  { label: "Contact Us", href: "/contact" },
+  { label: "Feedback", href: "#feedback" },
 ];
 
 const transactionLinks = [
-  { label: "Monthly Due", href: "#monthly-due" },
-  { label: "Amenity Reservation", href: "#amenity-reservation" },
-  { label: "Lot Availabilities", href: "#lot-availabilities" },
+  { label: "Monthly Due", href: "/monthly-due" },
+  { label: "Amenity Reservation", href: "/amenities-reservation" },
+  { label: "Lot Availabilities", href: "/lot-availabilities" },
 ];
 
 type NavbarVariant = "hero" | "community";
@@ -40,6 +41,7 @@ const buttonStyles: Record<NavbarVariant, string> = {
 };
 
 export const Navbar = ({ variant = "hero" }: { variant?: NavbarVariant }) => {
+  const router = useRouter();
   return (
     <header className="fixed inset-x-0 top-4 z-50">
       <div
@@ -81,7 +83,7 @@ export const Navbar = ({ variant = "hero" }: { variant?: NavbarVariant }) => {
           </DropdownMenu>
         </nav>
 
-        <Button className={cn("hidden lg:inline-flex", buttonStyles[variant])}>
+        <Button onClick={() => router.push("/sign-in")} className={cn("hidden lg:inline-flex", buttonStyles[variant])}>
           Get Started
         </Button>
       </div>

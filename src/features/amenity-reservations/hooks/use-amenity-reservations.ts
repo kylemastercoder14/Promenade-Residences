@@ -14,15 +14,15 @@ export const useSuspenseAmenityReservations = () => {
 
 export const useSuspenseAmenityReservation = (id: string) => {
   const trpc = useTRPC();
-  return useSuspenseQuery(
-    trpc.amenityReservations.getOne.queryOptions({ id })
-  );
+  return useSuspenseQuery(trpc.amenityReservations.getOne.queryOptions({ id }));
 };
+
+type AmenityFilter = "COURT" | "GAZEBO" | "PARKING_AREA";
 
 export const useAmenityReservationsByDateRange = (
   startDate: Date,
   endDate: Date,
-  amenity?: "court" | "gazebo" | "parking area"
+  amenity?: AmenityFilter
 ) => {
   const trpc = useTRPC();
   return useSuspenseQuery(
@@ -188,4 +188,3 @@ export const useUpdatePaymentStatus = () => {
     })
   );
 };
-

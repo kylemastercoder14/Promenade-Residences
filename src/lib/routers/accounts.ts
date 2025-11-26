@@ -36,7 +36,10 @@ export const accountsRouter = createTRPCRouter({
           user?.email || input.id,
           `Changed role to ${input.role}`
         ),
-        metadata: { oldRole: user?.role, newRole: input.role },
+        metadata: {
+          oldRole: user?.role ?? null,
+          newRole: input.role,
+        },
       });
 
       return result;

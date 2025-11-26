@@ -21,7 +21,7 @@ import { toast } from "sonner";
 
 const formSchema = z.object({
   email: z.email(),
-  password: z.string().min(8, "Password must be at least 8 characters long"),
+  password: z.string().min(1, "Password is required"),
 });
 
 export const LoginForm = () => {

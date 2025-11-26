@@ -17,8 +17,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { FeedbackCategory } from "@/generated/prisma/client";
 import { useCreateFeedback } from "../hooks/use-feedback";
+
+const FEEDBACK_CATEGORIES = [
+  "GENERAL",
+  "AMENITIES",
+  "SECURITY",
+  "BILLING",
+  "EVENT",
+  "SUGGESTION",
+  "OTHER",
+] as const;
+
+type FeedbackCategoryValue = (typeof FEEDBACK_CATEGORIES)[number];
 
 const feedbackSchema = z.object({
   residentName: z.string().min(2, "Your name is required"),
@@ -34,20 +45,20 @@ const feedbackSchema = z.object({
     .optional()
     .or(z.literal("")),
   subject: z.string().min(5, "Subject is required").max(120),
-  category: z.nativeEnum(FeedbackCategory),
+  category: z.enum(FEEDBACK_CATEGORIES),
   rating: z.coerce.number().min(1).max(5).optional(),
   message: z.string().min(20, "Please provide more details").max(1500),
   allowFollowUp: z.boolean().default(true),
 });
 
-const categoryOptions = [
-  { label: "General Feedback", value: FeedbackCategory.GENERAL },
-  { label: "Amenities & Facilities", value: FeedbackCategory.AMENITIES },
-  { label: "Security & Safety", value: FeedbackCategory.SECURITY },
-  { label: "Billing & Payments", value: FeedbackCategory.BILLING },
-  { label: "Events & Activities", value: FeedbackCategory.EVENT },
-  { label: "Suggestions & Ideas", value: FeedbackCategory.SUGGESTION },
-  { label: "Other Concerns", value: FeedbackCategory.OTHER },
+const categoryOptions: Array<{ label: string; value: FeedbackCategoryValue }> = [
+  { label: "General Feedback", value: "GENERAL" },
+  { label: "Amenities & Facilities", value: "AMENITIES" },
+  { label: "Security & Safety", value: "SECURITY" },
+  { label: "Billing & Payments", value: "BILLING" },
+  { label: "Events & Activities", value: "EVENT" },
+  { label: "Suggestions & Ideas", value: "SUGGESTION" },
+  { label: "Other Concerns", value: "OTHER" },
 ];
 
 export const ResidentFeedbackForm = () => {
@@ -58,7 +69,7 @@ export const ResidentFeedbackForm = () => {
       contactEmail: "",
       contactNumber: "",
       subject: "",
-      category: FeedbackCategory.GENERAL,
+      category: "GENERAL" as FeedbackCategoryValue,
       rating: 5,
       message: "",
       allowFollowUp: true,
@@ -79,7 +90,7 @@ export const ResidentFeedbackForm = () => {
         contactEmail: "",
         contactNumber: "",
         subject: "",
-        category: FeedbackCategory.GENERAL,
+        category: "GENERAL" as FeedbackCategoryValue,
         rating: 5,
         message: "",
         allowFollowUp: true,

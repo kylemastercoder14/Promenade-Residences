@@ -10,18 +10,22 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import Link from 'next/link';
+import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 
 const formSchema = z.object({
-  email: z.email(),
+  email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters long"),
 });
 
 export const LoginForm = () => {
+  const router = useRouter();
   const form = useForm<z.infer<typeof formSchema>>({
     defaultValues: {
       email: "",
@@ -30,8 +34,30 @@ export const LoginForm = () => {
     resolver: zodResolver(formSchema),
   });
 
-  const onSubmit = (data: z.infer<typeof formSchema>) => {
-    console.log(data);
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    const { email, password } = data;
+
+    const promise = authClient.signIn.email({
+      email,
+      password,
+      callbackURL: "/admin/dashboard",
+    });
+
+    toast.promise(promise, {
+      loading: "Signing in...",
+      success: "Welcome back!",
+      error: "Invalid credentials. Please try again.",
+    });
+
+    try {
+      const result = await promise;
+      if (result?.error) {
+        return;
+      }
+      router.push("/admin/dashboard");
+    } catch {
+      // Already handled by toast.promise
+    }
   };
 
   return (

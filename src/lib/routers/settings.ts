@@ -158,14 +158,10 @@ export const settingsRouter = createTRPCRouter({
 
       // Update password - better-auth uses bcrypt for password hashing
       try {
-        // Import bcrypt to hash the new password (better-auth uses bcrypt)
-        const bcrypt = require("bcryptjs");
-        const hashedPassword = await bcrypt.hash(input.newPassword, 10);
-
         await prisma.account.update({
           where: { id: account.id },
           data: {
-            password: hashedPassword,
+            password: input.newPassword,
           },
         });
 

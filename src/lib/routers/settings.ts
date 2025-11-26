@@ -1,10 +1,16 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import prisma from "@/lib/db";
 import z from "zod";
 import { TRPCError } from "@trpc/server";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { createSystemLog, LogAction, LogModule, createLogDescription } from "@/lib/system-log";
+import {
+  createSystemLog,
+  LogAction,
+  LogModule,
+  createLogDescription,
+} from "@/lib/system-log";
 
 export const settingsRouter = createTRPCRouter({
   // Get current user profile
@@ -100,7 +106,9 @@ export const settingsRouter = createTRPCRouter({
     .input(
       z.object({
         currentPassword: z.string().min(1, "Current password is required"),
-        newPassword: z.string().min(8, "Password must be at least 8 characters"),
+        newPassword: z
+          .string()
+          .min(8, "Password must be at least 8 characters"),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -117,7 +125,7 @@ export const settingsRouter = createTRPCRouter({
           headers: await headers(),
         });
 
-        if (!signInResult || signInResult.error) {
+        if (!signInResult || !signInResult.user) {
           throw new TRPCError({
             code: "UNAUTHORIZED",
             message: "Current password is incorrect",
@@ -214,7 +222,10 @@ export const settingsRouter = createTRPCRouter({
         browser = "Chrome";
       } else if (userAgent.includes("Firefox")) {
         browser = "Firefox";
-      } else if (userAgent.includes("Safari") && !userAgent.includes("Chrome")) {
+      } else if (
+        userAgent.includes("Safari") &&
+        !userAgent.includes("Chrome")
+      ) {
         browser = "Safari";
       } else if (userAgent.includes("Edg")) {
         browser = "Edge";
@@ -252,4 +263,3 @@ export const settingsRouter = createTRPCRouter({
     });
   }),
 });
-

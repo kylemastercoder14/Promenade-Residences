@@ -1,6 +1,6 @@
 "use client";
 
-import { Upload, X, File, FileText } from "lucide-react";
+import { Upload, X, File as FileIcon, FileText } from "lucide-react";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { useDropzone } from "react-dropzone";
@@ -28,7 +28,7 @@ const getFileIcon = (fileType: FileType) => {
     case "image":
       return null; // Will use Image component
     default:
-      return <File className="w-8 h-8 text-muted-foreground" />;
+      return <FileIcon className="w-8 h-8 text-muted-foreground" />;
   }
 };
 

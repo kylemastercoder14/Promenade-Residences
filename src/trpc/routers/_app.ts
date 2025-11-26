@@ -7,6 +7,8 @@ import { vehicleRegistrationsRouter } from "@/lib/routers/vehicle-registrations"
 import { residentsRouter } from "@/lib/routers/residents";
 import { monthlyDuesRouter } from "@/lib/routers/monthly-dues";
 import { settingsRouter } from "@/lib/routers/settings";
+import { logsRouter } from "@/lib/routers/logs";
+import { feedbackRouter } from "@/lib/routers/feedback";
 
 export const appRouter = createTRPCRouter({
   accounts: accountsRouter,
@@ -17,6 +19,8 @@ export const appRouter = createTRPCRouter({
   residents: residentsRouter,
   monthlyDues: monthlyDuesRouter,
   settings: settingsRouter,
+  logs: logsRouter,
+  feedback: feedbackRouter,
 });
 // export type definition of API
 export type AppRouter = typeof appRouter;

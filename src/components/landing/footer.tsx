@@ -14,6 +14,7 @@ const footerLinks = [
       { label: "Monthly Due", href: "#monthly-due" },
       { label: "Amenity Reservation", href: "#amenity-reservation" },
       { label: "Lot Availabilities", href: "#lot-availabilities" },
+      { label: "Feedback", href: "/feedback" },
     ],
   },
   {

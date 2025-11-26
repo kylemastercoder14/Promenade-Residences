@@ -29,6 +29,7 @@ model User {
   accounts      Account[]
   amenityReservations AmenityReservation[]
   systemLogs    SystemLog[]
+  feedbacks     Feedback[]
 
   @@map("user")
 }
@@ -242,6 +243,7 @@ model Resident {
   map                 Maps?                   @relation(fields: [mapId], references: [id], onDelete: SetNull)
   vehicleRegistrations VehicleRegistration[]
   monthlyDues         MonthlyDue[]
+  feedbacks           Feedback[]
   createdAt           DateTime                @default(now())
   updatedAt           DateTime                @default(now()) @updatedAt
 
@@ -298,6 +300,45 @@ enum LogModule {
   MONTHLY_DUES
   SETTINGS
   AUTH
+}
+
+enum FeedbackCategory {
+  GENERAL
+  AMENITIES
+  SECURITY
+  BILLING
+  EVENT
+  SUGGESTION
+  OTHER
+}
+
+enum FeedbackStatus {
+  NEW
+  IN_REVIEW
+  RESOLVED
+}
+
+model Feedback {
+  id            String          @id @default(uuid())
+  residentName  String
+  contactEmail  String?
+  contactNumber String?
+  subject       String
+  message       String          @db.Text
+  category      FeedbackCategory
+  status        FeedbackStatus  @default(NEW)
+  rating        Int?
+  allowFollowUp Boolean         @default(true)
+  residentId    String?
+  resident      Resident?       @relation(fields: [residentId], references: [id], onDelete: SetNull)
+  userId        String?
+  user          User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @default(now()) @updatedAt
+
+  @@index([category])
+  @@index([status])
+  @@map("feedback")
 }
 
 model SystemLog {

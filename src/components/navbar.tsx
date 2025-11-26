@@ -16,6 +16,7 @@ const navLinks = [
   { label: "What’s New", href: "#news" },
   { label: "Announcement", href: "#announcements" },
   { label: "Contact Us", href: "#contact" },
+  { label: "Feedback", href: "/feedback" },
 ];
 
 const transactionLinks = [

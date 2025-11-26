@@ -38,7 +38,7 @@ const paymentFormSchema = z.object({
   paymentMethod: z.enum(["CASH", "GCASH", "MAYA", "OTHER_BANK"]).optional(),
   notes: z.string().optional(),
   attachment: z.string().optional(),
-  applyAdvance: z.boolean().default(false),
+  applyAdvance: z.boolean(),
 });
 
 interface MonthData {
@@ -308,7 +308,7 @@ export const PaymentForm = ({
                     <div className="space-y-1 leading-none">
                       <FormLabel>Apply Advance Payment</FormLabel>
                       <FormDescription>
-                        Apply excess amount (₱{excessAmount.toFixed(2)}) to next month's
+                        Apply excess amount (₱{excessAmount.toFixed(2)}) to next month&apos;s
                         payment
                       </FormDescription>
                     </div>

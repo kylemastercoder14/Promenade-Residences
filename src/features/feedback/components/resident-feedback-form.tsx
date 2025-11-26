@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -46,9 +46,9 @@ const feedbackSchema = z.object({
     .or(z.literal("")),
   subject: z.string().min(5, "Subject is required").max(120),
   category: z.enum(FEEDBACK_CATEGORIES),
-  rating: z.coerce.number().min(1).max(5).optional(),
   message: z.string().min(20, "Please provide more details").max(1500),
-  allowFollowUp: z.boolean().default(true),
+  allowFollowUp: z.boolean(),
+  rating: z.number().min(1).max(5).optional(),
 });
 
 const categoryOptions: Array<{ label: string; value: FeedbackCategoryValue }> = [
@@ -61,16 +61,18 @@ const categoryOptions: Array<{ label: string; value: FeedbackCategoryValue }> = 
   { label: "Other Concerns", value: "OTHER" },
 ];
 
+type FeedbackFormValues = z.infer<typeof feedbackSchema>;
+
 export const ResidentFeedbackForm = () => {
-  const form = useForm<z.infer<typeof feedbackSchema>>({
-    resolver: zodResolver(feedbackSchema),
+  const form = useForm<FeedbackFormValues>({
+    resolver: zodResolver<FeedbackFormValues, Record<string, unknown>, FeedbackFormValues>(feedbackSchema),
     defaultValues: {
       residentName: "",
       contactEmail: "",
       contactNumber: "",
       subject: "",
       category: "GENERAL" as FeedbackCategoryValue,
-      rating: 5,
+      rating: undefined,
       message: "",
       allowFollowUp: true,
     },
@@ -78,23 +80,14 @@ export const ResidentFeedbackForm = () => {
 
   const createFeedback = useCreateFeedback();
 
-  const onSubmit = async (values: z.infer<typeof feedbackSchema>) => {
+  const onSubmit: SubmitHandler<FeedbackFormValues> = async (values) => {
     try {
       await createFeedback.mutateAsync({
         ...values,
         contactEmail: values.contactEmail || undefined,
         contactNumber: values.contactNumber || undefined,
       });
-      form.reset({
-        residentName: "",
-        contactEmail: "",
-        contactNumber: "",
-        subject: "",
-        category: "GENERAL" as FeedbackCategoryValue,
-        rating: 5,
-        message: "",
-        allowFollowUp: true,
-      });
+      form.reset();
     } catch (error) {
       console.error("Failed to submit feedback", error);
     }
@@ -219,7 +212,9 @@ export const ResidentFeedbackForm = () => {
                       placeholder="5"
                       value={field.value ?? ""}
                       onChange={(event) =>
-                        field.onChange(event.target.value ? Number(event.target.value) : "")
+                        field.onChange(
+                          event.target.value ? Number(event.target.value) : undefined
+                        )
                       }
                     />
                   </FormControl>

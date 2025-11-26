@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import CellActions from "./cell-actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User } from '@/lib/auth';
+import { User } from '@/generated/prisma/client';
 import { Badge } from '@/components/ui/badge';
 
 export const columns: ColumnDef<User>[] = [
@@ -28,14 +28,15 @@ export const columns: ColumnDef<User>[] = [
       const user = row.original;
       // eslint-disable-next-line react-hooks/rules-of-hooks
       const [copied, setCopied] = useState(false);
+      const displayName = user.name ?? "No Name";
       return (
         <div className="flex items-center gap-2 ml-2.5">
           <Avatar>
             <AvatarImage className="object-cover" src={user.image || ""} />
-            <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+            <AvatarFallback>{displayName.charAt(0)}</AvatarFallback>
           </Avatar>
           <div>
-            <span className="font-semibold">{user.name}</span>
+            <span className="font-semibold">{displayName}</span>
             <div
               title={user.id}
               className="text-xs cursor-pointer text-primary gap-2 flex items-center"

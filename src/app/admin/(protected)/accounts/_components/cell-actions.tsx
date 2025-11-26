@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
-import { User } from "@/lib/auth";
+import { User } from "@/generated/prisma/client";
 import { toast } from "sonner";
 import { useArchiveOrRetrieveAccount } from "@/features/accounts/hooks/use-accounts";
 import AlertModal from "@/components/alert-modal";

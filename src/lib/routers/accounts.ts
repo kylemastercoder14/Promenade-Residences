@@ -2,7 +2,12 @@ import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import prisma from "@/lib/db";
 import z from "zod";
 import { Role } from "@/generated/prisma/enums";
-import { createSystemLog, LogAction, LogModule, createLogDescription } from "@/lib/system-log";
+import {
+  createSystemLog,
+  LogAction,
+  LogModule,
+  createLogDescription,
+} from "@/lib/system-log";
 
 export const accountsRouter = createTRPCRouter({
   updateRole: protectedProcedure

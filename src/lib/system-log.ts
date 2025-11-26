@@ -29,6 +29,14 @@ export enum LogModule {
   AUTH = "AUTH",
 }
 
+type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
 interface CreateLogParams {
   userId: string;
   action: LogAction;
@@ -36,7 +44,7 @@ interface CreateLogParams {
   entityId?: string;
   entityType?: string;
   description: string;
-  metadata?: Record<string, unknown>;
+  metadata?: JsonValue | null;
 }
 
 /**
@@ -60,7 +68,7 @@ export async function createSystemLog(params: CreateLogParams) {
         entityId: params.entityId,
         entityType: params.entityType,
         description: params.description,
-        metadata: params.metadata || null,
+        metadata: params.metadata ?? undefined,
         ipAddress,
         userAgent,
       },
@@ -106,5 +114,3 @@ export function createLogDescription(
 
   return description;
 }
-
-

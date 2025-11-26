@@ -105,7 +105,10 @@ const calculateAge = (date: string) => {
   let age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
 
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
     age -= 1;
   }
 
@@ -115,7 +118,8 @@ const calculateAge = (date: string) => {
 const Page = () => {
   const [api, setApi] = React.useState<CarouselApi>();
   const [current, setCurrent] = React.useState(0);
-  const [formData, setFormData] = React.useState<SignUpFormData>(initialFormData);
+  const [formData, setFormData] =
+    React.useState<SignUpFormData>(initialFormData);
   const [activeStep, setActiveStep] = React.useState(0);
 
   React.useEffect(() => {
@@ -152,12 +156,14 @@ const Page = () => {
   const progressValue = ((activeStep + 1) / stepTitles.length) * 100;
   const isLastStep = activeStep === stepTitles.length - 1;
   const canAdvance = requiredFieldsPerStep[activeStep].every(
-    (field) => formData[field].trim().length > 0,
+    (field) => formData[field].trim().length > 0
   );
 
   const handleFieldChange =
-    (field: keyof SignUpFormData) => (value: string | React.ChangeEvent<HTMLInputElement>) => {
-      const resolvedValue = typeof value === "string" ? value : value.target.value;
+    (field: keyof SignUpFormData) =>
+    (value: string | React.ChangeEvent<HTMLInputElement>) => {
+      const resolvedValue =
+        typeof value === "string" ? value : value.target.value;
 
       setFormData((prev) => {
         const next = { ...prev, [field]: resolvedValue };
@@ -218,7 +224,9 @@ const Page = () => {
                       />
                       <div>
                         <p className="font-semibold">{option.title}</p>
-                        <p className="text-sm text-muted-foreground">{option.description}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {option.description}
+                        </p>
                       </div>
                     </label>
                   );
@@ -235,7 +243,10 @@ const Page = () => {
             </div>
             <div className="grid gap-2">
               <Label className="flex items-center gap-2">
-                Middle Name <span className="text-xs text-muted-foreground">(optional)</span>
+                Middle Name{" "}
+                <span className="text-xs text-muted-foreground">
+                  (optional)
+                </span>
               </Label>
               <Input
                 value={formData.middleName}
@@ -258,14 +269,19 @@ const Page = () => {
           <div className="grid gap-4">
             <div className="grid gap-2">
               <Label>Sex</Label>
-              <Select value={formData.sex} onValueChange={handleFieldChange("sex")}>
+              <Select
+                value={formData.sex}
+                onValueChange={handleFieldChange("sex")}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select sex" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="male">Male</SelectItem>
                   <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                  <SelectItem value="prefer-not-to-say">
+                    Prefer not to say
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -279,7 +295,11 @@ const Page = () => {
             </div>
             <div className="grid gap-2">
               <Label>Age</Label>
-              <Input value={formData.age} readOnly placeholder="Automatically calculated" />
+              <Input
+                value={formData.age}
+                readOnly
+                placeholder="Automatically calculated"
+              />
             </div>
           </div>
         );
@@ -288,7 +308,10 @@ const Page = () => {
           <div className="grid gap-4">
             <div className="grid gap-2">
               <Label>Block</Label>
-              <Input value={formData.block} onChange={handleFieldChange("block")} />
+              <Input
+                value={formData.block}
+                onChange={handleFieldChange("block")}
+              />
             </div>
             <div className="grid gap-2">
               <Label>Lot</Label>
@@ -296,7 +319,10 @@ const Page = () => {
             </div>
             <div className="grid gap-2">
               <Label>Street</Label>
-              <Input value={formData.street} onChange={handleFieldChange("street")} />
+              <Input
+                value={formData.street}
+                onChange={handleFieldChange("street")}
+              />
             </div>
           </div>
         );
@@ -343,7 +369,9 @@ const Page = () => {
         <div className="grid h-full w-full gap-0 lg:grid-cols-2">
           {/* Form Section */}
           <div className="relative m-auto flex w-full max-w-lg flex-col items-center px-5 py-8">
-            <p className="mt-4 text-xl font-semibold tracking-tight">Create an account</p>
+            <p className="mt-4 text-xl font-semibold tracking-tight">
+              Create an account
+            </p>
 
             <Button variant="outline" className="mt-8 w-full gap-3">
               <GoogleLogo />
@@ -356,13 +384,18 @@ const Page = () => {
               <Separator />
             </div>
 
-            <form className="flex w-full flex-col gap-6" onSubmit={handleSubmit}>
+            <form
+              className="flex w-full flex-col gap-6"
+              onSubmit={handleSubmit}
+            >
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <span>
                     Step {activeStep + 1} of {stepTitles.length}
                   </span>
-                  <span className="font-medium text-foreground">{stepTitles[activeStep]}</span>
+                  <span className="font-medium text-foreground">
+                    {stepTitles[activeStep]}
+                  </span>
                 </div>
                 <Progress value={progressValue} />
               </div>
@@ -382,7 +415,7 @@ const Page = () => {
                 <Button
                   type={isLastStep ? "submit" : "button"}
                   className="flex-1"
-				  variant="primary"
+                  variant="primary"
                   onClick={isLastStep ? undefined : handleNext}
                   disabled={!canAdvance}
                 >
@@ -393,7 +426,11 @@ const Page = () => {
 
             <p className="mt-5 text-center text-sm">
               Already have an account?
-              <Link prefetch href="/sign-in" className="ml-1 text-green-900 underline">
+              <Link
+                prefetch
+                href="/sign-in"
+                className="ml-1 text-green-900 underline"
+              >
                 Sign in
               </Link>
             </p>
@@ -429,7 +466,9 @@ const Page = () => {
                             key={idx}
                             onClick={() => api?.scrollTo(idx)}
                             className={`h-1 rounded-full transition-all ${
-                              current === idx + 1 ? "w-8 bg-white" : "w-8 bg-gray-500"
+                              current === idx + 1
+                                ? "w-8 bg-white"
+                                : "w-8 bg-gray-500"
                             }`}
                             aria-label={`Go to slide ${idx + 1}`}
                           />

@@ -3,7 +3,7 @@ import { AppSidebar } from "@/components/layout/admin/app-sidebar";
 import { SiteHeader } from "@/components/layout/admin/site-header";
 import { getServerSession } from "@/lib/get-session";
 import { unauthorized } from "next/navigation";
-import { User } from "@/generated/prisma/client";
+import { User } from '@/lib/auth';
 
 const Layout = async ({ children }: { children: React.ReactNode }) => {
   const session = await getServerSession();

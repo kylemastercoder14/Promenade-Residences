@@ -24,7 +24,7 @@ import {
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { toast } from 'sonner';
-import { User } from '@/generated/prisma/client';
+import { User } from '@/lib/auth';
 
 export function NavUser({ user }: { user: User }) {
   const router = useRouter();

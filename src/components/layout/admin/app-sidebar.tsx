@@ -4,8 +4,10 @@ import * as React from "react";
 import {
   IconBuildingWarehouse,
   IconCalendar,
+  IconCar,
   IconDashboard,
   IconHistory,
+  IconHome2,
   IconMap,
   IconMapPin,
   IconNews,
@@ -67,30 +69,40 @@ const data = {
       ],
     },
     {
+      title: "Residents",
+      url: "/admin/residents",
+      icon: IconHome2,
+    },
+    {
+      title: "Vehicle Registration",
+      url: "/admin/vehicle-registrations",
+      icon: IconCar,
+    },
+    {
       title: "Announcements",
-      url: "#",
+      url: "/admin/announcements",
       icon: IconNews,
     },
     {
       title: "Maps",
-      url: "#",
+      url: "/admin/maps",
       icon: IconMap,
     },
   ],
   navSecondary: [
     {
       title: "Settings",
-      url: "#",
+      url: "/admin/settings",
       icon: IconSettings,
     },
     {
       title: "Feedback",
-      url: "#",
+      url: "/admin/feedback",
       icon: IconStars,
     },
     {
       title: "System Logs",
-      url: "#",
+      url: "/admin/system-logs",
       icon: IconHistory,
     },
   ],

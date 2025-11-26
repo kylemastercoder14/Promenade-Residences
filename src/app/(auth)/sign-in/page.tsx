@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/carousel";
 import React from "react";
 import Autoplay from "embla-carousel-autoplay";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
 
 const images = [
   "/auth-slider/1.png",
@@ -39,6 +41,17 @@ const Page = () => {
       setCurrent(api.selectedScrollSnap() + 1);
     });
   }, [api]);
+
+  async function handleSocialSignIn(provider: "google" | "github") {
+    const { error } = await authClient.signIn.social({
+      provider,
+      callbackURL: "/",
+    });
+
+    if (error) {
+      toast.error(`Error signing in with ${provider}: ${error.message}`);
+    }
+  }
 
   return (
     <Card className="w-full">
@@ -102,7 +115,11 @@ const Page = () => {
               height={150}
             />
 
-            <Button variant="outline" className="mt-8 w-full gap-3">
+            <Button
+              onClick={() => handleSocialSignIn("google")}
+              variant="outline"
+              className="mt-8 w-full gap-3"
+            >
               <GoogleLogo />
               Continue with Google
             </Button>

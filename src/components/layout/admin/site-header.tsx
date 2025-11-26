@@ -23,7 +23,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { NavUser } from "./nav-user";
-import { User } from "../../../generated/prisma/client";
+import { User } from '@/lib/auth';
 
 // Map route segments to readable names
 const routeNameMap: Record<string, string> = {
@@ -189,7 +189,7 @@ export function SiteHeader({ user }: { user: User }) {
               <Button variant="ghost" size="icon" className="relative h-9 w-9">
                 <MessageCircle className="h-5 w-5" />
                 <span className="sr-only">Messages</span>
-              </Button>
+          </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
               <DropdownMenuLabel className="px-2 py-1.5">

@@ -1,0 +1,39 @@
+import { requireAuth } from "@/lib/auth-utils";
+import { HydrateClient } from "@/trpc/server";
+import { ErrorBoundary } from "react-error-boundary";
+import { Error } from "@/components/error";
+import { Loading } from "@/components/loading";
+import { Suspense } from "react";
+import { prefetchAmenityReservation } from '@/lib/prefetchers/amenity-reservations';
+import { AmenityReservation } from '@/features/amenity-reservations/components/amenity-reservation';
+
+interface PageProps {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+const Page = async ({ params }: PageProps) => {
+  await requireAuth();
+
+  const { id } = await params;
+  if (id !== "create") {
+    prefetchAmenityReservation(id);
+  }
+
+  return (
+    <HydrateClient>
+      <ErrorBoundary
+        fallback={
+          <Error title="Error" message="An unexpected error occurred." />
+        }
+      >
+        <Suspense fallback={<Loading message="Loading form..." />}>
+          <AmenityReservation amenityReservationId={id} />
+        </Suspense>
+      </ErrorBoundary>
+    </HydrateClient>
+  );
+};
+
+export default Page;

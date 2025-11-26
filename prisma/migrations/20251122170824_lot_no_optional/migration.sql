@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "maps" ALTER COLUMN "lotNo" DROP NOT NULL;

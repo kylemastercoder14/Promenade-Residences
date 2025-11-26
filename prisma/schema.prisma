@@ -5,6 +5,14 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPERADMIN // President
+  ADMIN // Vice President or Secretary
+  ACCOUNTING // Treasurer or Auditor
+  USER // Resident
 }
 
 model User {
@@ -13,10 +21,14 @@ model User {
   name          String?
   emailVerified Boolean   @default(false)
   image         String?
+  role          Role      @default(USER)
+  isArchived    Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @default(now()) @updatedAt
   sessions      Session[]
   accounts      Account[]
+  amenityReservations AmenityReservation[]
+  systemLogs    SystemLog[]
 
   @@map("user")
 }
@@ -64,4 +76,247 @@ model Verification {
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@map("verification")
+}
+
+model Maps {
+  id            String   @id @default(uuid())
+  blockNo       String
+  lotNo         String?
+  street        String
+  lotSize       Float
+  houseType     String
+  minPrice      Float
+  maxPrice      Float
+  paymentMethod String
+  attachmentUrl String
+  availability  String
+  notes         String?
+  residents     Resident[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  @@map("maps")
+}
+
+enum UserType {
+  RESIDENT
+  TENANT
+  VISITOR
+}
+
+enum AmenityType {
+  COURT
+  GAZEBO
+  PARKING_AREA
+}
+
+enum ReservationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  REFUNDED
+}
+
+model AmenityReservation {
+  id            String            @id @default(uuid())
+  userType      UserType
+  userId        String?
+  user          User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  fullName      String
+  amenity       AmenityType
+  date          DateTime
+  startTime     String
+  endTime       String
+  numberOfGuests Int
+  purpose       String?
+  paymentMethod String
+  amountToPay   Float
+  amountPaid    Float              @default(0)
+  status        ReservationStatus  @default(PENDING)
+  paymentStatus PaymentStatus      @default(PENDING)
+  receiptUrl    String?
+  isArchived    Boolean            @default(false)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @default(now()) @updatedAt
+
+  @@map("amenity_reservation")
+}
+
+enum AnnouncementCategory {
+  IMPORTANT
+  EMERGENCY
+  UTILITIES
+  OTHER
+}
+
+enum PublicationStatus {
+  PUBLISHED
+  DRAFT
+}
+
+model Announcement {
+  id              String              @id @default(uuid())
+  title           String
+  category        AnnouncementCategory
+  isForAll        Boolean             @default(true)
+  description     String              @db.Text
+  attachment      String?
+  schedule        DateTime?
+  isPin           Boolean             @default(false)
+  publication     PublicationStatus   @default(DRAFT)
+  isArchived      Boolean             @default(false)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @default(now()) @updatedAt
+
+  @@map("announcement")
+}
+
+enum VehicleType {
+  SEDAN
+  SUV
+  TRUCK
+  MOTORCYCLE
+}
+
+enum RelationshipToVehicle {
+  OWNER
+  FAMILY_MEMBER
+  COMPANY_DRIVER
+}
+
+model VehicleRegistration {
+  id                  String                  @id @default(uuid())
+  brand               String
+  model               String
+  yearOfManufacture   Int
+  color               String
+  plateNumber         String
+  vehicleType         VehicleType
+  chassisNumber       String
+  engineNumber        String
+  licenseNumber       String
+  expiryDate          DateTime
+  relationshipToVehicle RelationshipToVehicle
+  orAttachment        String?
+  crAttachment        String?
+  residentId          String?
+  resident            Resident?              @relation(fields: [residentId], references: [id], onDelete: SetNull)
+  isArchived          Boolean                 @default(false)
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @default(now()) @updatedAt
+
+  @@map("vehicle_registration")
+}
+
+enum ResidencyType {
+  RESIDENT
+  TENANT
+}
+
+enum Sex {
+  MALE
+  FEMALE
+  PREFER_NOT_TO_SAY
+}
+
+model Resident {
+  id                  String                  @id @default(uuid())
+  typeOfResidency     ResidencyType
+  firstName           String
+  middleName          String?
+  lastName            String
+  suffix              String?
+  sex                 Sex
+  dateOfBirth         DateTime
+  contactNumber       String
+  emailAddress        String?
+  isArchived          Boolean                 @default(false)
+  isHead              Boolean                 @default(false)
+  mapId               String?
+  map                 Maps?                   @relation(fields: [mapId], references: [id], onDelete: SetNull)
+  vehicleRegistrations VehicleRegistration[]
+  monthlyDues         MonthlyDue[]
+  createdAt           DateTime                @default(now())
+  updatedAt           DateTime                @default(now()) @updatedAt
+
+  @@map("resident")
+}
+
+enum PaymentMethod {
+  CASH
+  GCASH
+  MAYA
+  OTHER_BANK
+}
+
+model MonthlyDue {
+  id            String        @id @default(uuid())
+  residentId    String
+  resident      Resident      @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  month         Int           // 1-12 (January to December)
+  year          Int           // e.g., 2024
+  amountPaid    Float         @default(0)
+  paymentMethod PaymentMethod?
+  notes         String?       @db.Text
+  attachment    String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @default(now()) @updatedAt
+
+  @@unique([residentId, month, year])
+  @@map("monthly_due")
+}
+
+enum LogAction {
+  CREATE
+  UPDATE
+  DELETE
+  ARCHIVE
+  RETRIEVE
+  LOGIN
+  LOGOUT
+  PASSWORD_CHANGE
+  PROFILE_UPDATE
+  STATUS_CHANGE
+  PAYMENT_CREATE
+  PAYMENT_UPDATE
+  PAYMENT_DELETE
+}
+
+enum LogModule {
+  ACCOUNTS
+  RESIDENTS
+  VEHICLE_REGISTRATIONS
+  ANNOUNCEMENTS
+  AMENITY_RESERVATIONS
+  MAPS
+  MONTHLY_DUES
+  SETTINGS
+  AUTH
+}
+
+model SystemLog {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      LogAction
+  module      LogModule
+  entityId    String?   // ID of the affected entity (e.g., resident ID, account ID)
+  entityType  String?   // Type of entity (e.g., "Resident", "Account", "MonthlyDue")
+  description String    @db.Text
+  metadata    Json?    // Additional data as JSON
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId])
+  @@index([module])
+  @@index([action])
+  @@index([createdAt])
+  @@map("system_log")
 }

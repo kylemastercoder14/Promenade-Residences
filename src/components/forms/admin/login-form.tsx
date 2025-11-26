@@ -101,7 +101,7 @@ export const LoginForm = () => {
         />
         <Link
           prefetch
-          href="/forgot-password"
+          href="/admin/forgot-password"
           className="justify-end flex text-sm underline"
         >
           Forgot Password?

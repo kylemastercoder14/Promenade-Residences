@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import CellActions from "./cell-actions";
 import { Badge } from "@/components/ui/badge";
 import { Resident } from "@/generated/prisma/client";
+import type { Maps } from "@/generated/prisma/client";
 import { format } from "date-fns";
 
 const getResidencyTypeLabel = (type: string) => {
@@ -32,7 +33,9 @@ const getSexLabel = (sex: string) => {
   }
 };
 
-const getFullName = (resident: Resident) => {
+type ResidentWithMap = Resident & { map?: Pick<Maps, "id" | "blockNo" | "lotNo" | "street"> | null };
+
+const getFullName = (resident: ResidentWithMap) => {
   const parts = [
     resident.firstName,
     resident.middleName,
@@ -42,7 +45,7 @@ const getFullName = (resident: Resident) => {
   return parts.join(" ");
 };
 
-export const columns: ColumnDef<Resident>[] = [
+export const columns: ColumnDef<ResidentWithMap>[] = [
   {
     accessorKey: "filtered",
     header: ({ column }) => {

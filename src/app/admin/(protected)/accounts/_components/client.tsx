@@ -3,7 +3,7 @@
 import { DataTable } from "@/components/data-table";
 import { useSuspenseAccounts } from "@/features/accounts/hooks/use-accounts";
 import { columns } from "./columns";
-import { Role } from '@/generated/prisma/enums';
+import { Role } from "@prisma/client";
 
 export const Client = () => {
   const accounts = useSuspenseAccounts();

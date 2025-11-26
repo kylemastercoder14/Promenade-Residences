@@ -29,7 +29,7 @@ import {
   useCreateVehicleRegistration,
   useUpdateVehicleRegistration,
 } from "@/features/vehicle-registrations/hooks/use-vehicle-registrations";
-import { VehicleRegistration } from "@/generated/prisma/client";
+import { VehicleRegistration } from "@prisma/client";
 import { format } from "date-fns";
 import ImageUpload from "@/components/image-upload";
 import { useTRPC } from "@/trpc/client";

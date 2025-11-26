@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import ImageUpload from "@/components/image-upload";
-import { Maps } from "@/generated/prisma/client";
+import { Maps } from "@prisma/client";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateMap } from '@/features/maps/hooks/use-maps';

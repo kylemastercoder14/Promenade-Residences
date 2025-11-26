@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { SystemLog, User } from '@/generated/prisma/client';
+import { SystemLog, User } from "@prisma/client";
 
 export const columns: ColumnDef<SystemLog & {
   user: User

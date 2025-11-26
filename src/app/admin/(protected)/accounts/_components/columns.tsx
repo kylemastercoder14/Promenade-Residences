@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import CellActions from "./cell-actions";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User } from '@/generated/prisma/client';
+import { User } from "@prisma/client";
 import { Badge } from '@/components/ui/badge';
 
 export const columns: ColumnDef<User>[] = [

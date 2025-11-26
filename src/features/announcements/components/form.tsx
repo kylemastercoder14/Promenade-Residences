@@ -30,7 +30,7 @@ import {
   useCreateAnnouncement,
   useUpdateAnnouncement,
 } from "@/features/announcements/hooks/use-announcements";
-import { Announcement } from "@/generated/prisma/client";
+import { Announcement } from "@prisma/client";
 import { format } from "date-fns";
 import ImageUpload from "@/components/image-upload";
 

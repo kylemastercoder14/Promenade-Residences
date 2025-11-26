@@ -19,7 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRouter } from "next/navigation";
-import { VehicleRegistration } from "@/generated/prisma/client";
+import { VehicleRegistration } from "@prisma/client";
 import { toast } from "sonner";
 import { useArchiveOrRetrieveVehicleRegistration } from "@/features/vehicle-registrations/hooks/use-vehicle-registrations";
 import AlertModal from "@/components/alert-modal";

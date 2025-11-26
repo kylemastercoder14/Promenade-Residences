@@ -29,7 +29,7 @@ import {
   useCreateResident,
   useUpdateResident,
 } from "@/features/residents/hooks/use-residents";
-import { Resident } from "@/generated/prisma/client";
+import { Resident } from "@prisma/client";
 import { format } from "date-fns";
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";

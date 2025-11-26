@@ -32,7 +32,7 @@ import {
   AmenityType,
   ReservationStatus,
   PaymentStatus,
-} from "@/generated/prisma/enums";
+} from "@prisma/client";
 import {
   MoreVertical,
   Edit,

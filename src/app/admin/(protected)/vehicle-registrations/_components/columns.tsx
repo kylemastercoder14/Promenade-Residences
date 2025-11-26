@@ -5,7 +5,7 @@ import { ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CellActions from "./cell-actions";
 import { Badge } from "@/components/ui/badge";
-import { VehicleRegistration } from "@/generated/prisma/client";
+import { VehicleRegistration } from "@prisma/client";
 import { format } from "date-fns";
 
 const getVehicleTypeLabel = (type: string) => {

@@ -5,8 +5,7 @@ import { ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import CellActions from "./cell-actions";
 import { Badge } from "@/components/ui/badge";
-import { Resident } from "@/generated/prisma/client";
-import type { Maps } from "@/generated/prisma/client";
+import type { Resident, Maps } from "@prisma/client";
 import { format } from "date-fns";
 
 const getResidencyTypeLabel = (type: string) => {

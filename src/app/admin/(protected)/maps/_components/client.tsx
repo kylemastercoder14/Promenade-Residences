@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { MapViewer } from "@/features/maps/components/map-viewer";
 import { useSuspenseMaps } from "@/features/maps/hooks/use-maps";
-import { Maps } from "@/generated/prisma/client";
+import { Maps } from "@prisma/client";
 
 export const Client = () => {
   const { data: maps } = useSuspenseMaps();

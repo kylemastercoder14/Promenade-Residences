@@ -5,7 +5,7 @@ import {
 } from "@/trpc/init";
 import prisma from "@/lib/db";
 import z from "zod";
-import { FeedbackCategory, FeedbackStatus } from "@/generated/prisma/client";
+import { FeedbackCategory, FeedbackStatus } from "@prisma/client";
 
 const feedbackCreateSchema = z.object({
   residentName: z.string().min(2, "Name is required"),

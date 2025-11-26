@@ -33,7 +33,7 @@ import {
 } from "@/features/amenity-reservations/hooks/use-amenity-reservations";
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { AmenityReservation } from "@/generated/prisma/client";
+import { AmenityReservation } from "@prisma/client";
 
 const formSchema = z
   .object({

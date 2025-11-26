@@ -56,10 +56,7 @@ import { useRouter } from "next/navigation";
 import { useSuspenseAnnouncements } from "@/features/announcements/hooks/use-announcements";
 import { useArchiveAnnouncement } from "@/features/announcements/hooks/use-announcements";
 import { parseAsInteger, parseAsString, useQueryStates } from "nuqs";
-import {
-  AnnouncementCategory,
-  PublicationStatus,
-} from "@/generated/prisma/enums";
+import { AnnouncementCategory, PublicationStatus } from "@prisma/client";
 
 const getCategoryColor = (category: AnnouncementCategory) => {
   switch (category) {

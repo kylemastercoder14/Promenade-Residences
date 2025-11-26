@@ -1,7 +1,7 @@
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import prisma from "@/lib/db";
 import z from "zod";
-import { Role } from "@/generated/prisma/enums";
+import { Role } from "@prisma/client";
 import {
   createSystemLog,
   LogAction,

@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Role } from "@/generated/prisma/enums";
+import { Role } from "@prisma/client";
 import { generatePassword } from "@/lib/utils";
 import {
   Form,

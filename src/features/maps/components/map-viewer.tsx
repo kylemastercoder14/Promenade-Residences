@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize2 } from "lucide-react";
-import { Maps } from "@/generated/prisma/client";
+import { Maps } from "@prisma/client";
 import { cn } from "@/lib/utils";
 import {
   Dialog,

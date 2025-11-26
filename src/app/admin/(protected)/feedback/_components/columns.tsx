@@ -9,7 +9,7 @@ import {
   FeedbackCategory,
   FeedbackStatus,
   Resident,
-} from "@/generated/prisma/client";
+} from "@prisma/client";
 import { format } from "date-fns";
 
 type FeedbackRow = Feedback & { resident?: Resident | null };

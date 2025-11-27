@@ -7,8 +7,9 @@ import { ContactStatus } from "@prisma/client";
 
 const statusFilters = [
   { label: "New", value: "NEW" },
-  { label: "In review", value: "IN_REVIEW" },
+  { label: "In Progress", value: "IN_PROGRESS" },
   { label: "Resolved", value: "RESOLVED" },
+  { label: "Closed", value: "CLOSED" },
 ];
 
 export const Client = () => {

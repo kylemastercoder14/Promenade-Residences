@@ -59,11 +59,11 @@ export const CellActions = ({ contact }: { contact: Contact }) => {
           Mark as New
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => handleStatusUpdate("IN_REVIEW")}
-          disabled={contact.status === "IN_REVIEW"}
+          onClick={() => handleStatusUpdate("IN_PROGRESS")}
+          disabled={contact.status === "IN_PROGRESS"}
         >
           <Clock className="mr-2 h-4 w-4" />
-          Mark as In Review
+          Mark as In Progress
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => handleStatusUpdate("RESOLVED")}
@@ -71,6 +71,13 @@ export const CellActions = ({ contact }: { contact: Contact }) => {
         >
           <CheckCircle2 className="mr-2 h-4 w-4" />
           Mark as Resolved
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => handleStatusUpdate("CLOSED")}
+          disabled={contact.status === "CLOSED"}
+        >
+          <CheckCircle2 className="mr-2 h-4 w-4" />
+          Mark as Closed
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleArchive}>

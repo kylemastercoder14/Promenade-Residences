@@ -16,6 +16,7 @@ import {
   IconUsers,
   IconWallet,
 } from "@tabler/icons-react";
+import type { Icon } from "@tabler/icons-react";
 import type { Role } from "@prisma/client";
 
 import { NavMain } from "@/components/layout/admin/nav-main";
@@ -35,7 +36,7 @@ import { ADMIN_FEATURE_ACCESS } from "@/lib/rbac";
 type NavItem = {
   title: string;
   url: string;
-  icon?: typeof IconDashboard;
+  icon: Icon;
   roles?: Role[];
   submenu?: NavItem[];
 };

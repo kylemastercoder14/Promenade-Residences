@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { PaymentForm } from "@/features/monthly-dues/components/payment-form";
+import { MonthlyDueStatus } from "@prisma/client";
 
 const MONTHLY_DUE_AMOUNT = 750;
 
@@ -207,7 +208,7 @@ export const MonthlyDueRestrictionModal = () => {
         advancePayment: m.advancePayment,
         isPaid: m.isPaid,
         isOverdue: m.isOverdue,
-        status: m.status ?? undefined,
+        status: (m.status as MonthlyDueStatus | null | undefined) ?? undefined,
       };
     }).filter((item): item is NonNullable<typeof item> => item !== null);
   }, [monthsWithCarryForward, unpaidMonths]);

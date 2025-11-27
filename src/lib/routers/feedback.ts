@@ -10,7 +10,7 @@ import { TRPCError } from "@trpc/server";
 import { ADMIN_FEATURE_ACCESS, hasRequiredRole } from "@/lib/rbac";
 
 const feedbackProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (!hasRequiredRole(ctx.auth.user.role, ADMIN_FEATURE_ACCESS.FEEDBACK)) {
+  if (!hasRequiredRole(ctx.auth.user.role, [...ADMIN_FEATURE_ACCESS.FEEDBACK])) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "You do not have permission to manage feedback.",

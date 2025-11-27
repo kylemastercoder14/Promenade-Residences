@@ -38,7 +38,7 @@ const whatsNewSchema = z.object({
 });
 
 const adminWhatsNewProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (!hasRequiredRole(ctx.auth.user.role, ADMIN_FEATURE_ACCESS.WHATS_NEW)) {
+  if (!hasRequiredRole(ctx.auth.user.role, [...ADMIN_FEATURE_ACCESS.WHATS_NEW])) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "You do not have permission to manage news and events.",

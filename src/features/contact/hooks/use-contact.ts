@@ -12,6 +12,23 @@ export const useSuspenseContacts = () => {
   return useSuspenseQuery(trpc.contact.getMany.queryOptions());
 };
 
+export const useCreateContact = () => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    trpc.contact.create.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries(trpc.contact.getMany.queryOptions());
+        toast.success("Thank you for contacting us! We'll get back to you soon.");
+      },
+      onError: (error) => {
+        toast.error(error?.message || "Failed to send message. Please try again.");
+      },
+    })
+  );
+};
+
 export const useUpdateContactStatus = () => {
   const trpc = useTRPC();
   const queryClient = useQueryClient();

@@ -10,19 +10,19 @@ const contactChannels = [
   {
     title: "Resident Services",
     description: "Questions about dues, reservations, or digital access.",
-    value: "+63 917 555 0192",
+    value: "+63 928 984 8643",
     icon: Phone,
   },
   {
     title: "Admin Office",
     description: "Permit requests, billing statements, and official letters.",
-    value: "admin@promenade.ph",
+    value: "thepromenaderesidences@gmail.com",
     icon: Mail,
   },
   {
     title: "Guard House / Emergencies",
     description: "Security, access assistance, or urgent resident concerns.",
-    value: "+63 927 889 4430",
+    value: "+63 928 984 8643",
     icon: Phone,
   },
 ];
@@ -36,7 +36,7 @@ const officeInfo = [
   {
     icon: Clock,
     label: "Office Hours",
-    value: "Monday – Saturday | 8:00 AM - 6:00 PM",
+    value: "Monday – Sunday | 8:00 AM - 5:00 PM",
   },
 ];
 
@@ -127,7 +127,7 @@ const ContactPage = () => {
           <div className="overflow-hidden rounded-3xl border border-[#dfe3d9] shadow-sm">
             <iframe
               title="The Promenade Residence Map"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3876.2535482767503!2d120.96086537604803!3d14.329080886239872!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397c690d6c2ad5f%3A0x4937b7c35b58d53c!2sDasmari%C3%B1as%2C%20Cavite!5e0!3m2!1sen!2sph!4v1732136400000!5m2!1sen!2sph"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3865.2442227893644!2d120.97867357577863!3d14.355273383034541!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397d40468b51f81%3A0x5fc64244447d12e6!2sThe%20Promenade!5e0!3m2!1sen!2sph!4v1764253227117!5m2!1sen!2sph"
               allowFullScreen
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"

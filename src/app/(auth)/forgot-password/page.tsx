@@ -3,6 +3,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +51,7 @@ const requiredFieldsPerStep: Array<Array<keyof ForgotPasswordForm>> = [
 ];
 
 const Page = () => {
+  const router = useRouter();
   const [api, setApi] = React.useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = React.useState(0);
   const [formData, setFormData] = React.useState<ForgotPasswordForm>(initialFormState);
@@ -78,29 +80,34 @@ const Page = () => {
     };
 
   const handleNext = async () => {
-    if (!isLastStep && canAdvance) {
-      // Step 0: Request password reset email
-      if (activeStep === 0) {
-        setIsLoading(true);
-        try {
-          const { error } = await authClient.requestPasswordReset({
-            email: formData.email,
-            redirectTo: "/reset-password",
-          });
+    if (isLastStep) {
+      router.push("/sign-in");
+      return;
+    }
 
-          if (error) {
-            toast.error(error.message || "Failed to send reset email. Please try again.");
-            setIsLoading(false);
-            return;
-          }
+    if (!canAdvance) return;
 
-          toast.success("If an account with that email exists, a reset link has been sent to your email.");
-          setActiveStep((prev) => prev + 1);
-        } catch {
-          toast.error("An error occurred. Please try again.");
-        } finally {
+    // Step 0: Request password reset email
+    if (activeStep === 0) {
+      setIsLoading(true);
+      try {
+        const { error } = await authClient.requestPasswordReset({
+          email: formData.email,
+          redirectTo: "/reset-password",
+        });
+
+        if (error) {
+          toast.error(error.message || "Failed to send reset email. Please try again.");
           setIsLoading(false);
+          return;
         }
+
+        toast.success("If an account with that email exists, a reset link has been sent to your email.");
+        setActiveStep((prev) => prev + 1);
+      } catch {
+        toast.error("An error occurred. Please try again.");
+      } finally {
+        setIsLoading(false);
       }
     }
   };

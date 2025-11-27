@@ -182,15 +182,15 @@ const AboutPage = () => {
               <div>
                 <h4 className="text-lg font-semibold text-[#1b2b1e] mb-3">Management Office</h4>
                 <ul className="space-y-2 text-[#4e5c51]">
-                  <li><strong>Phone:</strong> (02) 1234-5678</li>
-                  <li><strong>Email:</strong> management@promenaderesidence.com</li>
-                  <li><strong>Office Hours:</strong> Monday to Friday, 8:00 AM - 5:00 PM</li>
+                  <li><strong>Phone:</strong> +63 928 984 8643</li>
+                  <li><strong>Email:</strong> thepromenaderesidences@gmail.com</li>
+                  <li><strong>Office Hours:</strong> Monday to Sunday, 8:00 AM - 5:00 PM</li>
                 </ul>
               </div>
               <div>
                 <h4 className="text-lg font-semibold text-[#1b2b1e] mb-3">Emergency</h4>
                 <ul className="space-y-2 text-[#4e5c51]">
-                  <li><strong>Emergency Hotline:</strong> (02) 1234-9999</li>
+                  <li><strong>Emergency Hotline:</strong> +63 928 984 8643</li>
                   <li><strong>Available:</strong> 24/7</li>
                 </ul>
               </div>

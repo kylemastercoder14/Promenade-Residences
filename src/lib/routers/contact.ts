@@ -11,7 +11,7 @@ import { ADMIN_FEATURE_ACCESS, hasRequiredRole } from "@/lib/rbac";
 import { sendMail } from "@/lib/email";
 
 const contactProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (!hasRequiredRole(ctx.auth.user.role, ADMIN_FEATURE_ACCESS.CONTACT)) {
+  if (!hasRequiredRole(ctx.auth.user.role, [...ADMIN_FEATURE_ACCESS.CONTACT])) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "You do not have permission to access contact messages.",

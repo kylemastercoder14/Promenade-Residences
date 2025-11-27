@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useTRPC } from "@/trpc/client";
 
 import {
   Card,
@@ -27,36 +29,6 @@ import {
 
 export const description = "Collection revenue area chart";
 
-// Static data for all 12 months
-const generateChartData = (year: string) => {
-  const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-
-  // Sample data - in a real app, this would come from an API based on the selected year
-  const sampleData: Record<string, number[]> = {
-    "2024": [186000, 305000, 237000, 273000, 209000, 214000, 245000, 198000, 267000, 289000, 312000, 298000],
-    "2025": [195000, 315000, 247000, 283000, 219000, 224000, 255000, 208000, 277000, 299000, 322000, 308000],
-    "2026": [205000, 325000, 257000, 293000, 229000, 234000, 265000, 218000, 287000, 309000, 332000, 318000],
-  };
-
-  return months.map((month, index) => ({
-    month,
-    collection: sampleData[year]?.[index] || 0,
-  }));
-};
-
 const chartConfig = {
   collection: {
     label: "Collection",
@@ -65,8 +37,15 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function CollectionAreaChart() {
-  const [selectedYear, setSelectedYear] = React.useState("2024");
-  const chartData = generateChartData(selectedYear);
+  const trpc = useTRPC();
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = React.useState(currentYear.toString());
+
+  const { data: chartData } = useSuspenseQuery(
+    trpc.dashboard.getCollectionData.queryOptions({
+      year: parseInt(selectedYear),
+    })
+  );
 
   const formatCurrency = (value: number) => {
     return `₱${value.toLocaleString("en-US")}`;
@@ -89,15 +68,14 @@ export function CollectionAreaChart() {
               <SelectValue placeholder="Select year" />
             </SelectTrigger>
             <SelectContent className="rounded-xl">
-              <SelectItem value="2024" className="rounded-lg">
-                2024
-              </SelectItem>
-              <SelectItem value="2025" className="rounded-lg">
-                2025
-              </SelectItem>
-              <SelectItem value="2026" className="rounded-lg">
-                2026
-              </SelectItem>
+              {Array.from({ length: 5 }, (_, i) => {
+                const year = currentYear - 2 + i;
+                return (
+                  <SelectItem key={year} value={year.toString()} className="rounded-lg">
+                    {year}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </CardAction>

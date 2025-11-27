@@ -11,23 +11,22 @@ const footerLinks = [
       { label: "Monthly Due", href: "/monthly-due" },
       { label: "Amenity Reservation", href: "/amenities-reservation" },
       { label: "Lot Availabilities", href: "/lot-availabilities" },
-      { label: "Feedback", href: "#feedback" },
     ],
   },
   {
     title: "Help",
     items: [
       { label: "FAQs", href: "/faqs" },
-	  { label: "About", href: "#about" },
-      { label: "Contact Us", href: "/contact-us" },
+	  { label: "About", href: "/about" },
+      { label: "Contact Us", href: "/contact" },
     ],
   },
   {
     title: "Terms & Condition",
     items: [
-      { label: "HOA Contract", href: "#hoa" },
-      { label: "General Policy", href: "#policy" },
-      { label: "Privacy Policy", href: "#privacy" },
+      { label: "HOA Contract", href: "/hoa-contract" },
+      { label: "General Policy", href: "/general-policy" },
+      { label: "Privacy Policy", href: "/privacy-policy" },
     ],
   },
 ];

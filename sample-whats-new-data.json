@@ -1,0 +1,47 @@
+[
+  {
+    "title": "Top 5 Investment Opportunities in 2025",
+    "description": "Discover the best investment opportunities for residents looking to grow their wealth. From real estate to stocks, we cover all the essentials.",
+    "type": "BLOG",
+    "category": "INVESTMENT",
+    "content": "<h1>Investment Opportunities for 2025</h1><p>As we move into 2025, there are several promising investment opportunities that residents should consider:</p><ul><li><strong>Real Estate:</strong> Property values continue to rise in prime locations</li><li><strong>Stock Market:</strong> Technology and green energy sectors show strong growth</li><li><strong>Bonds:</strong> Government bonds offer stable returns</li><li><strong>Cryptocurrency:</strong> Digital assets remain volatile but potentially rewarding</li><li><strong>Mutual Funds:</strong> Diversified portfolios managed by professionals</li></ul><p>Remember to always consult with a financial advisor before making investment decisions.</p>",
+    "imageUrl": "",
+    "attachmentUrl": "",
+    "publication": "PUBLISHED",
+    "isFeatured": true
+  },
+  {
+    "title": "Best Travel Destinations Near Promenade",
+    "description": "Explore amazing travel destinations within a 2-hour drive from Promenade Residence. Perfect for weekend getaways and family trips.",
+    "type": "GO_TO_PLACES",
+    "category": "TRAVEL",
+    "content": "<h2>Weekend Getaway Destinations</h2><p>Looking for a quick escape? Here are our top recommendations:</p><h3>1. Mountain View Resort</h3><p>Just 45 minutes away, this resort offers stunning mountain views and relaxing spa treatments.</p><h3>2. Coastal Beach Paradise</h3><p>A 90-minute drive takes you to pristine beaches perfect for swimming and sunbathing.</p><h3>3. Historical Town Center</h3><p>Explore rich history and culture in this charming town just an hour away.</p><blockquote><p>Travel is the only thing you buy that makes you richer.</p></blockquote>",
+    "imageUrl": "",
+    "attachmentUrl": "",
+    "publication": "PUBLISHED",
+    "isFeatured": false
+  },
+  {
+    "title": "New Shopping Mall Opens Nearby",
+    "description": "Exciting news! A brand new shopping mall has opened just 10 minutes from Promenade, featuring over 100 stores and restaurants.",
+    "type": "NEWS",
+    "category": "SHOPPING",
+    "content": "<h1>Grand Opening This Weekend!</h1><p>The new <strong>Promenade Shopping Center</strong> officially opens this Saturday with special promotions and events.</p><h2>What to Expect:</h2><ol><li>Grand opening discounts up to 50% off</li><li>Live music and entertainment</li><li>Food court with 20+ restaurants</li><li>Free parking for the first month</li></ol><p>Don't miss out on this exciting addition to our community!</p>",
+    "imageUrl": "",
+    "attachmentUrl": "",
+    "publication": "PUBLISHED",
+    "isFeatured": true
+  },
+  {
+    "title": "Healthy Eating Tips for Busy Residents",
+    "description": "Learn how to maintain a healthy diet even with a busy schedule. Quick recipes and meal prep ideas that fit your lifestyle.",
+    "type": "BLOG",
+    "category": "FOOD",
+    "content": "<h2>Quick and Healthy Meal Ideas</h2><p>Eating healthy doesn't have to be time-consuming. Here are some tips:</p><ul><li><strong>Meal Prep Sundays:</strong> Prepare meals for the week ahead</li><li><strong>One-Pot Meals:</strong> Save time on cleanup</li><li><strong>Healthy Snacks:</strong> Keep nutritious options readily available</li></ul><h3>Sample Recipe: Quinoa Salad</h3><p>Mix cooked quinoa with fresh vegetables, olive oil, and lemon juice for a quick, nutritious meal.</p>",
+    "imageUrl": "",
+    "attachmentUrl": "",
+    "publication": "DRAFT",
+    "isFeatured": false
+  }
+]
+

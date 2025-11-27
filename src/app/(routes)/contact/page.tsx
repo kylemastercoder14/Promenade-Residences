@@ -3,10 +3,8 @@
 import Image from "next/image";
 import { Navbar } from "@/components/navbar";
 import { LandingFooter } from "@/components/landing/footer";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Mail, MapPin, Phone, Clock, Send } from "lucide-react";
+import { Mail, MapPin, Phone, Clock } from "lucide-react";
+import { ContactForm } from "@/features/contact/components/contact-form";
 
 const contactChannels = [
   {
@@ -124,19 +122,7 @@ const ContactPage = () => {
             </p>
           </div>
 
-          <form className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2">
-              <Input placeholder="Full name" />
-              <Input type="email" placeholder="Email address" />
-            </div>
-            <Input placeholder="Phone number" />
-            <Input placeholder="Subject" />
-            <Textarea placeholder="How can we help?" rows={6} />
-            <Button className="w-full gap-2 rounded-full bg-[#1f5e38] text-white hover:bg-[#17432a]">
-              <Send className="size-4" />
-              Submit inquiry
-            </Button>
-          </form>
+          <ContactForm />
 
           <div className="overflow-hidden rounded-3xl border border-[#dfe3d9] shadow-sm">
             <iframe

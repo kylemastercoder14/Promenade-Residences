@@ -25,6 +25,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useSignUp } from "@/features/auth/hooks/use-sign-up";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
 
 const images = [
   "/auth-slider/1.png",
@@ -121,6 +124,7 @@ const Page = () => {
   const [formData, setFormData] =
     React.useState<SignUpFormData>(initialFormData);
   const [activeStep, setActiveStep] = React.useState(0);
+  const signUpMutation = useSignUp();
 
   React.useEffect(() => {
     if (!api) {
@@ -186,11 +190,30 @@ const Page = () => {
     setActiveStep((prev) => Math.max(prev - 1, 0));
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!canAdvance) return;
-    // Placeholder for actual submit logic (API call, etc.)
-    console.log("Submitting sign-up data:", formData);
+    if (!canAdvance || signUpMutation.isPending) return;
+
+    try {
+      await signUpMutation.mutateAsync({
+        residencyType: formData.residencyType === "homeowner" ? "RESIDENT" : "TENANT",
+        firstName: formData.firstName,
+        middleName: formData.middleName || undefined,
+        lastName: formData.lastName,
+        suffix: undefined,
+        sex: formData.sex.toUpperCase().replace("-", "_") as "MALE" | "FEMALE" | "PREFER_NOT_TO_SAY",
+        dateOfBirth: formData.dateOfBirth,
+        block: formData.block,
+        lot: formData.lot || undefined,
+        street: formData.street,
+        email: formData.email,
+        contactNumber: formData.contactNumber,
+        password: formData.password,
+      });
+    } catch (error) {
+      // Error is handled by the mutation's onError callback
+      console.error("Sign-up error:", error);
+    }
   };
 
   const renderStepFields = () => {
@@ -319,10 +342,22 @@ const Page = () => {
             </div>
             <div className="grid gap-2">
               <Label>Street</Label>
-              <Input
+              <Select
                 value={formData.street}
-                onChange={handleFieldChange("street")}
-              />
+                onValueChange={handleFieldChange("street")}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select street" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Utah Drive">Utah Drive</SelectItem>
+                  <SelectItem value="San Antonio Drive">San Antonio Drive</SelectItem>
+                  <SelectItem value="Beverly Hills Blvd.">Beverly Hills Blvd.</SelectItem>
+                  <SelectItem value="Los Angeles Blvd.">Los Angeles Blvd.</SelectItem>
+                  <SelectItem value="Dallas Drive">Dallas Drive</SelectItem>
+                  <SelectItem value="Portland Drive">Portland Drive</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         );
@@ -373,7 +408,20 @@ const Page = () => {
               Create an account
             </p>
 
-            <Button variant="outline" className="mt-8 w-full gap-3">
+            <Button
+              variant="outline"
+              className="mt-8 w-full gap-3"
+              onClick={async () => {
+                const { error } = await authClient.signIn.social({
+                  provider: "google",
+                  callbackURL: "/complete-profile",
+                });
+
+                if (error) {
+                  toast.error(`Error signing in with Google: ${error.message}`);
+                }
+              }}
+            >
               <GoogleLogo />
               Continue with Google
             </Button>
@@ -417,9 +465,9 @@ const Page = () => {
                   className="flex-1"
                   variant="primary"
                   onClick={isLastStep ? undefined : handleNext}
-                  disabled={!canAdvance}
+                  disabled={!canAdvance || signUpMutation.isPending}
                 >
-                  {isLastStep ? "Create account" : "Next"}
+                  {isLastStep ? (signUpMutation.isPending ? "Creating..." : "Create account") : "Next"}
                 </Button>
               </div>
             </form>

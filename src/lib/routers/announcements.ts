@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
+import { createTRPCRouter, protectedProcedure, baseProcedure } from "@/trpc/init";
 import prisma from "@/lib/db";
 import z from "zod";
 import { createSystemLog, LogAction, LogModule, createLogDescription } from "@/lib/system-log";
@@ -18,6 +18,35 @@ const announcementSchema = z.object({
 });
 
 export const announcementsRouter = createTRPCRouter({
+  // Public endpoint for published announcements (for landing page)
+  getPublished: baseProcedure
+    .input(
+      z
+        .object({
+          category: z
+            .enum(["IMPORTANT", "EMERGENCY", "UTILITIES", "OTHER"])
+            .nullable()
+            .optional(),
+          limit: z.number().min(1).max(200).default(10),
+        })
+        .optional()
+    )
+    .query(async ({ input }) => {
+      const where: any = {
+        isArchived: false,
+        publication: "PUBLISHED",
+        ...(input?.category && { category: input.category }),
+      };
+
+      const announcements = await prisma.announcement.findMany({
+        where,
+        orderBy: [{ isPin: "desc" }, { createdAt: "desc" }],
+        take: input?.limit || 10,
+      });
+
+      return announcements;
+    }),
+
   getOne: protectedProcedure
     .input(
       z.object({

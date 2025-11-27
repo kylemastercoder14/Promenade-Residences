@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useTRPC } from "@/trpc/client";
 import {
   Card,
   CardContent,
@@ -14,7 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import {
   IconBuildingWarehouse,
   IconCalendar,
-  IconMapPin,
 } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { CustomCalendar } from "@/components/custom-calendar";
@@ -24,34 +24,22 @@ import {
   getLocalTimeZone,
   today,
 } from "@internationalized/date";
-
-type Reservation = {
-  id: string;
-  date: Date;
-  amenity: "Clubhouse" | "Parking Area" | "Basketball Court";
-  resident: string;
-  timeSlot: string;
-  status: "Approved" | "Pending" | "Cancelled";
-};
+import { AmenityType, ReservationStatus } from "@prisma/client";
+import { useMemo } from "react";
 
 const amenityColors: Record<
   string,
   { bg: string; border: string; text: string }
 > = {
-  "Clubhouse": {
-    bg: "bg-blue-100 dark:bg-blue-900/20",
-    border: "border-blue-500",
-    text: "text-blue-700 dark:text-blue-300",
-  },
-  "Parking Area": {
+  GAZEBO: {
     bg: "bg-green-100 dark:bg-green-900/20",
     border: "border-green-500",
     text: "text-green-700 dark:text-green-300",
   },
-  "Basketball Court": {
-    bg: "bg-orange-100 dark:bg-orange-900/20",
-    border: "border-orange-500",
-    text: "text-orange-700 dark:text-orange-300",
+  COURT: {
+    bg: "bg-blue-100 dark:bg-blue-900/20",
+    border: "border-blue-500",
+    text: "text-blue-700 dark:text-blue-300",
   },
 };
 
@@ -59,69 +47,69 @@ const amenityIcons: Record<
   string,
   React.ComponentType<{ className?: string }>
 > = {
-  "Clubhouse": IconBuildingWarehouse,
-  "Parking Area": IconMapPin,
-  "Basketball Court": IconCalendar,
+  GAZEBO: IconBuildingWarehouse,
+  COURT: IconCalendar,
 };
 
-// Sample reservations data
-const sampleReservations: Reservation[] = [
-  {
-    id: "1",
-    date: new Date(2025, 10, 22), // November 22, 2025
-    amenity: "Clubhouse",
-    resident: "John Doe",
-    timeSlot: "10:00 AM - 2:00 PM",
-    status: "Approved",
-  },
-  {
-    id: "2",
-    date: new Date(2025, 10, 23),
-    amenity: "Parking Area",
-    resident: "Jane Smith",
-    timeSlot: "3:00 PM - 5:00 PM",
-    status: "Approved",
-  },
-  {
-    id: "3",
-    date: new Date(2025, 10, 24),
-    amenity: "Basketball Court",
-    resident: "Mike Johnson",
-    timeSlot: "6:00 PM - 8:00 PM",
-    status: "Pending",
-  },
-  {
-    id: "4",
-    date: new Date(2025, 10, 21),
-    amenity: "Clubhouse",
-    resident: "Sarah Williams",
-    timeSlot: "1:00 PM - 4:00 PM",
-    status: "Approved",
-  },
-  {
-    id: "5",
-    date: new Date(2025, 10, 22),
-    amenity: "Parking Area",
-    resident: "David Brown",
-    timeSlot: "9:00 AM - 12:00 PM",
-    status: "Approved",
-  },
-];
+const formatTime = (time24: string) => {
+  const [hours, minutes] = time24.split(":");
+  const hour = parseInt(hours, 10);
+  const ampm = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 || 12;
+  return `${hour12}:${minutes} ${ampm}`;
+};
 
 export function AmenityReservationCalendar() {
+  const trpc = useTRPC();
   const timeZone = getLocalTimeZone();
   const [selectedDate, setSelectedDate] = React.useState<CalendarDate>(
     today(timeZone)
   );
 
-  const eventsForSelectedDate = sampleReservations.filter((reservation) => {
-    const reservationDate = fromDate(reservation.date, timeZone);
-    return (
-      reservationDate.year === selectedDate.year &&
-      reservationDate.month === selectedDate.month &&
-      reservationDate.day === selectedDate.day
+  const { data: reservations } = useSuspenseQuery(
+    trpc.amenityReservations.getMany.queryOptions()
+  );
+
+  // Prepare reservations map for calendar
+  const reservationsMap = useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        date: string;
+        reservations: Array<{
+          amenity: string;
+          startTime: string;
+          endTime: string;
+        }>;
+      }
+    >();
+    reservations.forEach((reservation) => {
+      if (reservation.amenity === "PARKING_AREA") return;
+      const dateKey = format(new Date(reservation.date), "yyyy-MM-dd");
+      if (!map.has(dateKey)) {
+        map.set(dateKey, { date: dateKey, reservations: [] });
+      }
+      const entry = map.get(dateKey)!;
+      entry.reservations.push({
+        amenity: reservation.amenity,
+        startTime: reservation.startTime,
+        endTime: reservation.endTime,
+      });
+    });
+    return map;
+  }, [reservations]);
+
+  const eventsForSelectedDate = useMemo(() => {
+    const dateKey = format(
+      selectedDate.toDate(timeZone),
+      "yyyy-MM-dd"
     );
-  });
+    return reservations.filter((reservation) => {
+      if (reservation.amenity === "PARKING_AREA") return false;
+      const reservationDate = format(new Date(reservation.date), "yyyy-MM-dd");
+      return reservationDate === dateKey;
+    });
+  }, [reservations, selectedDate, timeZone]);
 
   const formattedSelectedDate = format(
     selectedDate.toDate(timeZone),
@@ -138,13 +126,14 @@ export function AmenityReservationCalendar() {
       </CardHeader>
       <CardContent className="space-y-4">
         <CustomCalendar
-          minValue={today(timeZone)}
           value={selectedDate}
           onChange={(date) => {
             if (date) {
               setSelectedDate(date as CalendarDate);
             }
           }}
+          size="dashboard"
+          reservations={reservationsMap}
           aria-label="Amenity reservation calendar"
         />
 
@@ -155,8 +144,14 @@ export function AmenityReservationCalendar() {
           {eventsForSelectedDate.length > 0 ? (
             <div className="space-y-2">
               {eventsForSelectedDate.map((reservation) => {
-                const colors = amenityColors[reservation.amenity];
-                const IconComponent = amenityIcons[reservation.amenity];
+                const colors = amenityColors[reservation.amenity] || amenityColors.COURT;
+                const IconComponent = amenityIcons[reservation.amenity] || IconCalendar;
+                const statusMap: Record<ReservationStatus, "default" | "secondary" | "destructive"> = {
+                  APPROVED: "default",
+                  PENDING: "secondary",
+                  REJECTED: "destructive",
+                  CANCELLED: "destructive",
+                };
                 return (
                   <div
                     key={reservation.id}
@@ -166,25 +161,19 @@ export function AmenityReservationCalendar() {
                       <div className="flex items-start gap-2 flex-1">
                         <IconComponent className="h-4 w-4 mt-0.5 shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-sm">
-                            {reservation.amenity}
+                          <p className="font-medium text-sm capitalize">
+                            {reservation.amenity.replace("_", " ")}
                           </p>
                           <p className="text-xs opacity-80 mt-0.5">
-                            {reservation.resident}
+                            {reservation.fullName}
                           </p>
                           <p className="text-xs opacity-70 mt-0.5">
-                            {reservation.timeSlot}
+                            {formatTime(reservation.startTime)} - {formatTime(reservation.endTime)}
                           </p>
                         </div>
                       </div>
                       <Badge
-                        variant={
-                          reservation.status === "Approved"
-                            ? "default"
-                            : reservation.status === "Pending"
-                            ? "secondary"
-                            : "destructive"
-                        }
+                        variant={statusMap[reservation.status]}
                         className="shrink-0 text-xs"
                       >
                         {reservation.status}
@@ -215,7 +204,9 @@ export function AmenityReservationCalendar() {
                 <div
                   className={`w-3 h-3 rounded-full ${colors.bg} ${colors.border} border`}
                 />
-                <span className="text-muted-foreground">{amenity}</span>
+                <span className="text-muted-foreground capitalize">
+                  {amenity.replace("_", " ")}
+                </span>
               </div>
             );
           })}

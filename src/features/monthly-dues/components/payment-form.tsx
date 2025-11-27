@@ -27,6 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCreatePayment, useCreateBatchPayment } from "../hooks/use-monthly-dues";
 import ImageUpload from "@/components/image-upload";
 import { X } from "lucide-react";
+import { PaymentMethod } from '@prisma/client';
 
 const MONTHLY_DUE_AMOUNT = 750;
 
@@ -35,7 +36,7 @@ const paymentFormSchema = z.object({
     .number()
     .min(0.01, "Amount must be greater than 0")
     .max(100000, "Amount is too large"),
-  paymentMethod: z.enum(["CASH", "GCASH", "MAYA", "OTHER_BANK"]).optional(),
+  paymentMethod: z.enum(PaymentMethod).optional(),
   notes: z.string().optional(),
   attachment: z.string().optional(),
   applyAdvance: z.boolean(),
@@ -63,6 +64,7 @@ interface PaymentFormProps {
   monthsData?: MonthData[];
   onSuccess: () => void;
   onCancel: () => void;
+  onPaymentMethodChange?: (method: string | null) => void;
 }
 
 export const PaymentForm = ({
@@ -74,6 +76,7 @@ export const PaymentForm = ({
   monthsData,
   onSuccess,
   onCancel,
+  onPaymentMethodChange,
 }: PaymentFormProps) => {
   const createPayment = useCreatePayment();
   const createBatchPayment = useCreateBatchPayment();
@@ -268,11 +271,14 @@ export const PaymentForm = ({
                     <span className="text-muted-foreground">(optional)</span>
                   </FormLabel>
                   <Select
-                    onValueChange={(value) =>
-                      field.onChange(
-                        value === "none" ? undefined : (value as "CASH" | "GCASH" | "MAYA" | "OTHER_BANK")
-                      )
-                    }
+                    onValueChange={(value) => {
+                      const method = value === "none" ? undefined : (value as "CASH" | "GCASH" | "MAYA" | "OTHER_BANK");
+                      field.onChange(method);
+                      // Notify parent component of payment method change
+                      if (onPaymentMethodChange) {
+                        onPaymentMethodChange(method || null);
+                      }
+                    }}
                     value={field.value || "none"}
                   >
                     <FormControl>

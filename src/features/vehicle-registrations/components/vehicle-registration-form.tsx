@@ -403,7 +403,7 @@ export const VehicleRegistrationForm = ({
                     </FormControl>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
-                      {residents.map((resident) => (
+                      {residents.filter((f) => !f.isArchived).map((resident) => (
                         <SelectItem key={resident.id} value={resident.id}>
                           {getResidentFullName(resident)} ({resident.typeOfResidency === "RESIDENT" ? "Resident" : "Tenant"})
                         </SelectItem>

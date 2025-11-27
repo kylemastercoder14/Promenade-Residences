@@ -4,6 +4,7 @@ import * as React from "react";
 import {
   IconBuildingWarehouse,
   IconCalendar,
+  IconCalendarClock,
   IconCar,
   IconDashboard,
   IconHistory,
@@ -76,6 +77,11 @@ const data = {
       title: "Announcements",
       url: "/admin/announcements",
       icon: IconNews,
+    },
+    {
+      title: "News & Events",
+      url: "/admin/whats-new",
+      icon: IconCalendarClock,
     },
     {
       title: "Maps",

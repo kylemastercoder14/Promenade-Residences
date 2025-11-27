@@ -45,7 +45,7 @@ const Page = () => {
   async function handleSocialSignIn(provider: "google" | "github") {
     const { error } = await authClient.signIn.social({
       provider,
-      callbackURL: "/",
+      callbackURL: "/complete-profile", // Redirect to profile completion check
     });
 
     if (error) {

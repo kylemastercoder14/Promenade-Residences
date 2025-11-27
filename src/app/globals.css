@@ -127,3 +127,72 @@
 html {
   scroll-behavior: smooth;
 }
+
+/* Hide print-only elements on screen */
+.print-only {
+  display: none;
+}
+
+/* Print Styles */
+@media print {
+  @page {
+    margin: 1cm;
+    size: A4;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+    background: white;
+    color: black;
+  }
+
+  /* Hide non-printable elements */
+  nav,
+  header:not(.print-header),
+  button:not(.print-button),
+  .no-print {
+    display: none !important;
+  }
+
+  /* Show print-only elements */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Table styles */
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
+  table th,
+  table td {
+    border: 1px solid #000;
+    padding: 8px;
+    text-align: left;
+  }
+
+  table th {
+    background-color: #f3f4f6 !important;
+    font-weight: bold;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Prevent page breaks */
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  /* Ensure proper spacing */
+  .print-section {
+    margin-bottom: 1.5rem;
+    page-break-inside: avoid;
+  }
+}

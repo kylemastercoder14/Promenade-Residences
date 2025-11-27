@@ -63,7 +63,12 @@ const categoryOptions: Array<{ label: string; value: FeedbackCategoryValue }> = 
 
 type FeedbackFormValues = z.infer<typeof feedbackSchema>;
 
-export const ResidentFeedbackForm = () => {
+interface ResidentFeedbackFormProps {
+  onSuccess?: () => void;
+  variant?: "default" | "modal";
+}
+
+export const ResidentFeedbackForm = ({ onSuccess, variant = "default" }: ResidentFeedbackFormProps) => {
   const form = useForm<FeedbackFormValues>({
     resolver: zodResolver<FeedbackFormValues, Record<string, unknown>, FeedbackFormValues>(feedbackSchema),
     defaultValues: {
@@ -88,6 +93,7 @@ export const ResidentFeedbackForm = () => {
         contactNumber: values.contactNumber || undefined,
       });
       form.reset();
+      onSuccess?.();
     } catch (error) {
       console.error("Failed to submit feedback", error);
     }
@@ -96,15 +102,17 @@ export const ResidentFeedbackForm = () => {
   const isSubmitting = createFeedback.isPending || form.formState.isSubmitting;
 
   return (
-    <div className="rounded-3xl border border-[#dfe3d9] bg-white p-6 shadow-sm">
-      <div className="mb-6 space-y-1">
-        <p className="text-sm font-semibold uppercase tracking-wide text-[#1d402a]">
-          Share your thoughts
-        </p>
-        <p className="text-sm text-[#4c5b51]">
-          Tell us how we can improve the Promenade experience.
-        </p>
-      </div>
+    <div className={variant === "modal" ? "pb-6" : "rounded-3xl border border-[#dfe3d9] bg-white p-6 shadow-sm"}>
+      {variant === "default" && (
+        <div className="mb-6 space-y-1">
+          <p className="text-sm font-semibold uppercase tracking-wide text-[#1d402a]">
+            Share your thoughts
+          </p>
+          <p className="text-sm text-[#4c5b51]">
+            Tell us how we can improve the Promenade experience.
+          </p>
+        </div>
+      )}
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           <FormField
@@ -123,7 +131,7 @@ export const ResidentFeedbackForm = () => {
             )}
           />
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 items-start md:grid-cols-2">
             <FormField
               control={form.control}
               name="contactEmail"
@@ -170,7 +178,7 @@ export const ResidentFeedbackForm = () => {
             )}
           />
 
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2 items-start">
             <FormField
               control={form.control}
               name="category"

@@ -113,6 +113,9 @@ export const CalendarView = ({ reservations }: CalendarViewProps) => {
       }
     >();
     reservations.forEach((reservation) => {
+      // Filter out PARKING_AREA
+      if (reservation.amenity === "PARKING_AREA") return;
+
       const dateKey = format(new Date(reservation.date), "yyyy-MM-dd");
       if (!map.has(dateKey)) {
         map.set(dateKey, { date: dateKey, reservations: [] });
@@ -133,8 +136,6 @@ export const CalendarView = ({ reservations }: CalendarViewProps) => {
         return "bg-blue-500";
       case "GAZEBO":
         return "bg-green-500";
-      case "PARKING_AREA":
-        return "bg-purple-500";
       default:
         return "bg-gray-500";
     }
@@ -166,7 +167,6 @@ export const CalendarView = ({ reservations }: CalendarViewProps) => {
             <CustomCalendar
               value={selectedDate}
               onChange={(date) => setSelectedDate(date as CalendarDate)}
-              minValue={today(getLocalTimeZone())}
               size="reservation-admin"
               reservations={reservationsMap}
             />
@@ -181,10 +181,6 @@ export const CalendarView = ({ reservations }: CalendarViewProps) => {
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-green-500" />
                   <span>Gazebo</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-purple-500" />
-                  <span>Parking Area</span>
                 </div>
               </div>
             </div>

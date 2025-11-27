@@ -33,7 +33,7 @@ import { cn } from "@/lib/utils";
 export type ReservationIndicator = {
   date: string; // yyyy-MM-dd format
   reservations: Array<{
-    amenity: string; // Amenity type (COURT, GAZEBO, PARKING_AREA)
+    amenity: string; // Amenity type (COURT, GAZEBO)
     startTime: string; // Start time (e.g., "10:00")
     endTime: string; // End time (e.g., "15:00")
   }>;
@@ -65,31 +65,24 @@ export const CalendarCell = ({
   const dateReservations = reservations?.get(dateKey);
   const hasReservations = dateReservations && dateReservations.reservations.length > 0;
 
-  // Format time from 24h to 12h format
+  // Format time from 24h to compact 12h format (e.g., "3:47PM")
   const formatTime = (time24: string) => {
     const [hours, minutes] = time24.split(":");
     const hour = parseInt(hours, 10);
     const ampm = hour >= 12 ? "PM" : "AM";
     const hour12 = hour % 12 || 12;
-    return `${hour12}:${minutes} ${ampm}`;
+    return `${hour12}:${minutes}${ampm}`;
   };
-
-  // Get the first reservation for display (or combine if multiple)
-  const displayReservation = hasReservations
-    ? dateReservations.reservations[0]
-    : null;
 
   // Get badge color based on amenity type (matching legend colors)
   const getBadgeColor = (amenity: string) => {
     switch (amenity) {
       case "COURT":
-        return isSelected ? "bg-blue-500 text-white" : "bg-blue-500 text-white";
+        return "bg-blue-500 text-white";
       case "GAZEBO":
-        return isSelected ? "bg-green-500 text-white" : "bg-green-500 text-white";
-      case "PARKING_AREA":
-        return isSelected ? "bg-purple-500 text-white" : "bg-purple-500 text-white";
+        return "bg-green-500 text-white";
       default:
-        return isSelected ? "bg-gray-500 text-white" : "bg-gray-500 text-white";
+        return "bg-gray-500 text-white";
     }
   };
 
@@ -122,20 +115,32 @@ export const CalendarCell = ({
               )}
             />
           )}
-          {/* Reservation badge */}
-          {hasReservations && displayReservation && (
-            <Badge
-              variant="secondary"
-              className={cn(
-                "absolute left-1/2 transform -translate-x-1/2 text-[8px] px-1 py-0 h-auto font-semibold",
-                getBadgeColor(displayReservation.amenity),
-                size === "dashboard" ? "bottom-1 text-[7px]" : "bottom-2",
-                "max-w-[90%] overflow-hidden text-ellipsis whitespace-nowrap"
-              )}
-              title={`${displayReservation.amenity} (${formatTime(displayReservation.startTime)} - ${formatTime(displayReservation.endTime)})`}
-            >
-              {formatTime(displayReservation.startTime)} - {formatTime(displayReservation.endTime)}
-            </Badge>
+          {/* All reservation badges */}
+          {hasReservations && dateReservations.reservations.length > 0 && (
+            <div className={cn(
+              "absolute left-0 right-0 flex flex-col gap-0.5",
+              size === "dashboard" ? "bottom-1 px-0.5" : "bottom-2 px-1"
+            )}>
+              {dateReservations.reservations
+                .filter((r) => r.amenity !== "PARKING_AREA") // Filter out parking area
+                .map((reservation, index) => (
+                  <Badge
+                    key={index}
+                    variant="secondary"
+                    className={cn(
+                      "text-[8px] px-1 py-0 h-auto font-semibold w-full",
+                      getBadgeColor(reservation.amenity),
+                      size === "dashboard" ? "text-[7px]" : "text-[8px]",
+                      "overflow-hidden text-ellipsis whitespace-nowrap flex items-center justify-center"
+                    )}
+                    title={`${reservation.amenity} (${formatTime(reservation.startTime)} - ${formatTime(reservation.endTime)})`}
+                  >
+                    <span className="truncate">
+                      {formatTime(reservation.startTime)}-{formatTime(reservation.endTime)}
+                    </span>
+                  </Badge>
+                ))}
+            </div>
           )}
         </div>
       </div>

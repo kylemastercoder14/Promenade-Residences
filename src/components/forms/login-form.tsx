@@ -13,19 +13,37 @@ import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useState } from "react";
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
+import { Role } from "@prisma/client";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters long"),
+  password: z.string().min(1, "Password is required"),
 });
+
+// Helper function to determine redirect URL based on user role
+const getRedirectUrl = (role: string | undefined): string => {
+  if (!role) return "/";
+
+  switch (role) {
+    case Role.SUPERADMIN:
+    case Role.ADMIN:
+    case Role.ACCOUNTING:
+      return "/admin/dashboard";
+    case Role.USER:
+    default:
+      return "/"; // Homepage for regular users/residents
+  }
+};
 
 export const LoginForm = () => {
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     defaultValues: {
       email: "",
@@ -36,27 +54,37 @@ export const LoginForm = () => {
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     const { email, password } = data;
-
-    const promise = authClient.signIn.email({
-      email,
-      password,
-      callbackURL: "/admin/dashboard",
-    });
-
-    toast.promise(promise, {
-      loading: "Signing in...",
-      success: "Welcome back!",
-      error: "Invalid credentials. Please try again.",
-    });
+    setIsSubmitting(true);
 
     try {
-      const result = await promise;
+      const result = await authClient.signIn.email({
+        email,
+        password,
+        callbackURL: "/",
+      });
+
       if (result?.error) {
+        toast.error(result.error.message || "Invalid credentials. Please try again.");
+        setIsSubmitting(false);
         return;
       }
-      router.push("/admin/dashboard");
-    } catch {
-      // Already handled by toast.promise
+
+      // Wait a bit for session to be set, then get user role
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const session = await authClient.getSession();
+      const userRole = session?.data?.user?.role as string | undefined;
+
+      const redirectUrl = getRedirectUrl(userRole);
+
+      toast.success("Welcome back!");
+
+      // Use window.location for a full page reload to ensure session is properly set
+      window.location.href = redirectUrl;
+    } catch (error) {
+      console.error("Sign-in error:", error);
+      toast.error("An error occurred. Please try again.");
+      setIsSubmitting(false);
     }
   };
 
@@ -103,11 +131,18 @@ export const LoginForm = () => {
             </FormItem>
           )}
         />
-        <Link prefetch href="/forgot-password" className="justify-end flex text-sm underline">
-          Forgot Password?
-        </Link>
-        <Button variant="primary" type="submit" className="mt-2 w-full">
-          Continue with Email
+        <div className="flex items-center justify-between">
+          <Link prefetch href="/forgot-password" className="text-sm underline text-muted-foreground hover:text-foreground">
+            Forgot Password?
+          </Link>
+        </div>
+        <Button
+          variant="primary"
+          type="submit"
+          className="mt-2 w-full"
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? "Signing in..." : "Continue with Email"}
         </Button>
       </form>
     </Form>

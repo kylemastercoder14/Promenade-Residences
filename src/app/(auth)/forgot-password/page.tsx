@@ -9,18 +9,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSeparator,
-  InputOTPSlot,
-} from "@/components/ui/input-otp";
-import {
   Carousel,
   CarouselContent,
   CarouselItem,
   type CarouselApi,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
+import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const images = [
   "/auth-slider/1.png",
@@ -42,24 +39,24 @@ const initialFormState: ForgotPasswordForm = {
   confirmPassword: "",
 };
 
-const stepTitles = ["Verify Email", "Enter OTP", "Reset Password"];
+const stepTitles = ["Verify Email", "Check Email"];
 const stepDescriptions = [
-  "We will email you a 6-digit verification code.",
-  "Enter the code from your inbox to continue.",
-  "Create a strong password to secure your account.",
+  "We will email you a password reset link.",
+  "Click the link in your email to continue resetting your password.",
 ];
 
 const requiredFieldsPerStep: Array<Array<keyof ForgotPasswordForm>> = [
   ["email"],
-  ["otp"],
-  ["password", "confirmPassword"],
+  [], // Step 1 doesn't require fields, just waiting for email
 ];
 
 const Page = () => {
+  const router = useRouter();
   const [api, setApi] = React.useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = React.useState(0);
   const [formData, setFormData] = React.useState<ForgotPasswordForm>(initialFormState);
   const [activeStep, setActiveStep] = React.useState(0);
+  const [isLoading, setIsLoading] = React.useState(false);
 
   React.useEffect(() => {
     if (!api) return;
@@ -70,12 +67,8 @@ const Page = () => {
 
   const progressValue = ((activeStep + 1) / stepTitles.length) * 100;
   const isLastStep = activeStep === stepTitles.length - 1;
-  const passwordsMatch = formData.password === formData.confirmPassword;
 
   const canAdvance = requiredFieldsPerStep[activeStep].every((field) => {
-    if (field === "password" || field === "confirmPassword") {
-      return formData[field].trim().length >= 8;
-    }
     return formData[field].trim().length > 0;
   });
 
@@ -86,19 +79,40 @@ const Page = () => {
       setFormData((prev) => ({ ...prev, [field]: resolvedValue }));
     };
 
-  const handleNext = () => {
-    if (!isLastStep && canAdvance && (activeStep !== 2 || passwordsMatch)) {
-      setActiveStep((prev) => prev + 1);
+  const handleNext = async () => {
+    if (!isLastStep && canAdvance) {
+      // Step 0: Request password reset email
+      if (activeStep === 0) {
+        setIsLoading(true);
+        try {
+          const { error } = await authClient.requestPasswordReset({
+            email: formData.email,
+            redirectTo: "/reset-password",
+          });
+
+          if (error) {
+            toast.error(error.message || "Failed to send reset email. Please try again.");
+            setIsLoading(false);
+            return;
+          }
+
+          toast.success("If an account with that email exists, a reset link has been sent to your email.");
+          setActiveStep((prev) => prev + 1);
+        } catch (error) {
+          toast.error("An error occurred. Please try again.");
+        } finally {
+          setIsLoading(false);
+        }
+      }
     }
   };
 
   const handlePrevious = () => setActiveStep((prev) => Math.max(prev - 1, 0));
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!canAdvance || !passwordsMatch) return;
-    // Placeholder: integrate with API or mutation when available
-    console.log("Forgot password payload:", formData);
+    // This form only handles requesting the reset link
+    // The actual password reset happens on /reset-password page
   };
 
   const renderStepFields = () => {
@@ -118,61 +132,44 @@ const Page = () => {
       case 1:
         return (
           <div className="grid gap-3">
-            <Label>Verification Code</Label>
-            <InputOTP
-              maxLength={6}
-              value={formData.otp}
-              onChange={handleFieldChange("otp")}
-              className="w-full justify-center"
-            >
-              <InputOTPGroup>
-                <InputOTPSlot className='size-14' index={0} />
-                <InputOTPSlot className='size-14' index={1} />
-              </InputOTPGroup>
-              <InputOTPSeparator />
-              <InputOTPGroup>
-                <InputOTPSlot className='size-14' index={2} />
-                <InputOTPSlot className='size-14' index={3} />
-              </InputOTPGroup>
-              <InputOTPSeparator />
-              <InputOTPGroup>
-                <InputOTPSlot className='size-14' index={4} />
-                <InputOTPSlot className='size-14' index={5} />
-              </InputOTPGroup>
-            </InputOTP>
-            <p className="text-xs text-muted-foreground">
-              Didn&apos;t receive the code? Check your spam folder or request a new one.
-            </p>
-          </div>
-        );
-      case 2:
-        return (
-          <div className="grid gap-4">
-            <div className="grid gap-2">
-              <Label>New Password</Label>
-              <Input
-                type="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={handleFieldChange("password")}
-              />
-              <p className="text-xs text-muted-foreground">
-                Use at least 8 characters with a mix of letters and numbers.
+            <div className="rounded-lg border border-dashed p-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                We&apos;ve sent a password reset link to <strong>{formData.email}</strong>
+              </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                Please check your email and click the link to continue resetting your password.
               </p>
             </div>
-            <div className="grid gap-2">
-              <Label>Confirm Password</Label>
-              <Input
-                type="password"
-                placeholder="••••••••"
-                value={formData.confirmPassword}
-                onChange={handleFieldChange("confirmPassword")}
-                aria-invalid={formData.confirmPassword.length > 0 && !passwordsMatch}
-              />
-              {!passwordsMatch && formData.confirmPassword.length > 0 && (
-                <p className="text-xs text-destructive">Passwords do not match.</p>
-              )}
-            </div>
+            <p className="text-xs text-muted-foreground">
+              Didn&apos;t receive the email? Check your spam folder or request a new one.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full"
+              onClick={async () => {
+                setIsLoading(true);
+                try {
+                  const { error } = await authClient.requestPasswordReset({
+                    email: formData.email,
+                    redirectTo: "/reset-password",
+                  });
+
+                  if (error) {
+                    toast.error(error.message || "Failed to resend email.");
+                  } else {
+                    toast.success("Reset link sent! Please check your email.");
+                  }
+                } catch (error) {
+                  toast.error("An error occurred. Please try again.");
+                } finally {
+                  setIsLoading(false);
+                }
+              }}
+              disabled={isLoading}
+            >
+              Resend Reset Link
+            </Button>
           </div>
         );
       default:
@@ -213,18 +210,22 @@ const Page = () => {
                   variant="outline"
                   className="flex-1"
                   onClick={handlePrevious}
-                  disabled={activeStep === 0}
+                  disabled={activeStep === 0 || isLoading}
                 >
                   Previous
                 </Button>
                 <Button
-                  type={isLastStep ? "submit" : "button"}
+                  type="button"
                   className="flex-1"
-                  onClick={isLastStep ? undefined : handleNext}
+                  onClick={handleNext}
                   variant="primary"
-                  disabled={!canAdvance || (activeStep === 2 && !passwordsMatch)}
+                  disabled={!canAdvance || isLoading}
                 >
-                  {isLastStep ? "Reset password" : "Next"}
+                  {isLoading
+                    ? "Loading..."
+                    : activeStep === 0
+                    ? "Send Reset Link"
+                    : "Done"}
                 </Button>
               </div>
             </form>

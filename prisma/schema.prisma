@@ -360,3 +360,71 @@ model SystemLog {
   @@index([createdAt])
   @@map("system_log")
 }
+
+enum WhatsNewType {
+  BLOG
+  NEWS
+  GO_TO_PLACES
+  MEDIA_HUB
+}
+
+enum WhatsNewCategory {
+  INVESTMENT
+  TRAVEL
+  SHOPPING
+  FOOD
+  LIFESTYLE
+  TECHNOLOGY
+  HEALTH
+  EDUCATION
+  ENTERTAINMENT
+  OTHER
+}
+
+model WhatsNew {
+  id          String        @id @default(uuid())
+  title       String
+  description String        @db.Text
+  type        WhatsNewType
+  category    WhatsNewCategory?
+  content     String?       @db.Text // Full content for detailed view (rich text HTML)
+  imageUrl    String?
+  attachmentUrl String?
+  publication PublicationStatus @default(DRAFT)
+  isFeatured  Boolean       @default(false)
+  isArchived  Boolean       @default(false)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @default(now()) @updatedAt
+
+  @@index([type])
+  @@index([category])
+  @@index([publication])
+  @@index([isFeatured])
+  @@index([isArchived])
+  @@map("whats_new")
+}
+
+enum ContactStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model Contact {
+  id            String        @id @default(uuid())
+  fullName      String
+  email         String
+  phoneNumber   String?
+  subject       String
+  message       String        @db.Text
+  status        ContactStatus @default(NEW)
+  isArchived    Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @default(now()) @updatedAt
+
+  @@index([status])
+  @@index([isArchived])
+  @@index([createdAt])
+  @@map("contact")
+}

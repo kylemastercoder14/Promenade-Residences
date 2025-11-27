@@ -27,6 +27,7 @@ export enum LogModule {
   MONTHLY_DUES = "MONTHLY_DUES",
   SETTINGS = "SETTINGS",
   AUTH = "AUTH",
+  WHATS_NEW = "WHATS_NEW",
 }
 
 type JsonValue =

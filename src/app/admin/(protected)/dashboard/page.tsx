@@ -1,5 +1,7 @@
 "use client";
 
+import { useSuspenseQuery } from "@tanstack/react-query";
+import { useTRPC } from "@/trpc/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,86 +10,306 @@ import {
   IconCalendarCheck,
   IconBuilding,
   IconPrinter,
+  IconCurrencyDollar,
+  IconMessageCircle,
+  IconCalendarEvent,
 } from "@tabler/icons-react";
 import { CollectionAreaChart } from "@/components/layout/admin/collection-area-chart";
 import { AmenityReservationCalendar } from "@/components/layout/admin/amenity-reservation-calendar";
+import { ReservationStatusChart } from "@/components/layout/admin/reservation-status-chart";
 import {
   RecentTransactionsTable,
   RecentTransaction,
 } from "@/components/layout/admin/recent-transactions-table";
+import { format } from "date-fns";
+import { useMemo } from "react";
 
 const Page = () => {
-  const statistics = [
-    {
-      title: "Total Accounts",
-      value: "234",
-      details: "Residents • Tenants • Admin",
-      icon: IconUsers,
-    },
-    {
-      title: "Registered Vehicle",
-      value: "87",
-      details: "Active • Pending",
-      icon: IconCar,
-    },
-    {
-      title: "Monthly Dues Paid",
-      value: "12 / 30",
-      details: "Approved • Pending",
-      icon: IconCalendarCheck,
-    },
-    {
-      title: "Available Lots",
-      value: "24",
-      details: "Vacant • Owned",
-      icon: IconBuilding,
-    },
-  ];
+  const trpc = useTRPC();
+  const { data: stats } = useSuspenseQuery(
+    trpc.dashboard.getStatistics.queryOptions()
+  );
 
-  const recentTransactions: RecentTransaction[] = [
-    {
-      date: "Nov. 25, 2025",
-      type: "Monthly Due",
-      resident: "John Carter",
-      amount: "₱4,500.00",
-      status: "Completed" as const,
-    },
-    {
-      date: "Nov. 23, 2025",
-      type: "Amenity Reservation",
-      resident: "Isabella Cruz",
-      amount: "₱2,000.00",
-      status: "Pending" as const,
-    },
-    {
-      date: "Nov. 22, 2025",
-      type: "Vehicle Permit",
-      resident: "Miguel Santos",
-      amount: "₱1,200.00",
-      status: "Completed" as const,
-    },
-    {
-      date: "Nov. 21, 2025",
-      type: "Lot Reservation",
-      resident: "Erika Chan",
-      amount: "₱15,000.00",
-      status: "Rejected" as const,
-    },
-    {
-      date: "Nov. 25, 2025",
-      type: "Monthly Due",
-      resident: "Alfonso Reyes",
-      amount: "₱4,500.00",
-      status: "Completed" as const,
-    },
-  ];
+  const statistics = useMemo(() => {
+    const userCount = stats.accounts.byRole.USER || 0;
+    const adminCount = (stats.accounts.byRole.ADMIN || 0) + (stats.accounts.byRole.SUPERADMIN || 0) + (stats.accounts.byRole.ACCOUNTING || 0);
+
+    return [
+      {
+        title: "Total Accounts",
+        value: stats.accounts.total.toString(),
+        details: `${userCount} Users • ${adminCount} Admins`,
+        icon: IconUsers,
+      },
+      {
+        title: "Registered Vehicles",
+        value: stats.vehicles.total.toString(),
+        details: `${stats.vehicles.byType.SEDAN || 0} Sedan • ${stats.vehicles.byType.SUV || 0} SUV`,
+        icon: IconCar,
+      },
+      {
+        title: "Monthly Dues",
+        value: `${stats.monthlyDues.paid} / ${stats.monthlyDues.total}`,
+        details: `${stats.monthlyDues.paid} Paid • ${stats.monthlyDues.pending} Pending`,
+        icon: IconCalendarCheck,
+      },
+      {
+        title: "Available Lots",
+        value: stats.lots.available.toString(),
+        details: `${stats.lots.available} Vacant • ${stats.lots.owned} Owned`,
+        icon: IconBuilding,
+      },
+      {
+        title: "Total Residents",
+        value: stats.residents.total.toString(),
+        details: `${stats.residents.byType.RESIDENT || 0} Residents • ${stats.residents.byType.TENANT || 0} Tenants`,
+        icon: IconUsers,
+      },
+      {
+        title: "Amenity Reservations",
+        value: stats.reservations.total.toString(),
+        details: `${stats.reservations.byStatus.APPROVED || 0} Approved • ${stats.reservations.byStatus.PENDING || 0} Pending`,
+        icon: IconCalendarEvent,
+      },
+      {
+        title: "Total Revenue",
+        value: `₱${(stats.monthlyDues.revenue + stats.reservations.revenue).toLocaleString()}`,
+        details: `Dues: ₱${stats.monthlyDues.revenue.toLocaleString()} • Reservations: ₱${stats.reservations.revenue.toLocaleString()}`,
+        icon: IconCurrencyDollar,
+      },
+      {
+        title: "Feedback",
+        value: stats.feedback.total.toString(),
+        details: `${stats.feedback.byStatus.NEW || 0} New • ${stats.feedback.byStatus.RESOLVED || 0} Resolved`,
+        icon: IconMessageCircle,
+      },
+    ];
+  }, [stats]);
+
+  const recentTransactions: RecentTransaction[] = useMemo(() => {
+    const transactions: RecentTransaction[] = [];
+
+    // Add recent monthly dues
+    stats.recentMonthlyDues.forEach((due) => {
+      const residentName = `${due.resident.firstName} ${due.resident.lastName}`;
+      transactions.push({
+        date: format(new Date(due.createdAt), "MMM. d, yyyy"),
+        type: "Monthly Due",
+        resident: residentName,
+        amount: `₱${due.amountPaid.toLocaleString()}`,
+        status: due.amountPaid >= 750 ? ("Completed" as const) : ("Pending" as const),
+      });
+    });
+
+    // Add recent reservations
+    stats.recentReservations.forEach((reservation) => {
+      transactions.push({
+        date: format(new Date(reservation.date), "MMM. d, yyyy"),
+        type: "Amenity Reservation",
+        resident: reservation.fullName,
+        amount: `₱${reservation.amountPaid.toLocaleString()}`,
+        status:
+          reservation.paymentStatus === "PAID"
+            ? ("Completed" as const)
+            : reservation.status === "REJECTED" || reservation.status === "CANCELLED"
+            ? ("Rejected" as const)
+            : ("Pending" as const),
+      });
+    });
+
+    // Sort by date (most recent first) and take top 5
+    return transactions
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 5);
+  }, [stats]);
 
   const handlePrint = () => {
     window.print();
   };
 
+  // Prepare print data
+  const printData = useMemo(() => {
+    const userCount = stats.accounts.byRole.USER || 0;
+    const adminCount = (stats.accounts.byRole.ADMIN || 0) + (stats.accounts.byRole.SUPERADMIN || 0) + (stats.accounts.byRole.ACCOUNTING || 0);
+
+    return {
+      generatedAt: format(new Date(), "MMMM d, yyyy 'at' h:mm a"),
+      statistics: [
+        { label: "Total Accounts", value: stats.accounts.total, details: `${userCount} Users, ${adminCount} Admins` },
+        { label: "Total Residents", value: stats.residents.total, details: `${stats.residents.byType.RESIDENT || 0} Residents, ${stats.residents.byType.TENANT || 0} Tenants` },
+        { label: "Registered Vehicles", value: stats.vehicles.total, details: `${stats.vehicles.byType.SEDAN || 0} Sedan, ${stats.vehicles.byType.SUV || 0} SUV` },
+        { label: "Monthly Dues", value: `${stats.monthlyDues.paid}/${stats.monthlyDues.total}`, details: `${stats.monthlyDues.paid} Paid, ${stats.monthlyDues.pending} Pending` },
+        { label: "Available Lots", value: stats.lots.available, details: `${stats.lots.available} Vacant, ${stats.lots.owned} Owned` },
+        { label: "Amenity Reservations", value: stats.reservations.total, details: `${stats.reservations.byStatus.APPROVED || 0} Approved, ${stats.reservations.byStatus.PENDING || 0} Pending` },
+        { label: "Total Revenue", value: `₱${(stats.monthlyDues.revenue + stats.reservations.revenue).toLocaleString()}`, details: `Dues: ₱${stats.monthlyDues.revenue.toLocaleString()}, Reservations: ₱${stats.reservations.revenue.toLocaleString()}` },
+        { label: "Feedback", value: stats.feedback.total, details: `${stats.feedback.byStatus.NEW || 0} New, ${stats.feedback.byStatus.RESOLVED || 0} Resolved` },
+      ],
+      reservations: {
+        approved: stats.reservations.byStatus.APPROVED || 0,
+        pending: stats.reservations.byStatus.PENDING || 0,
+        rejected: stats.reservations.byStatus.REJECTED || 0,
+        cancelled: stats.reservations.byStatus.CANCELLED || 0,
+      },
+      feedback: {
+        new: stats.feedback.byStatus.NEW || 0,
+        inReview: stats.feedback.byStatus.IN_REVIEW || 0,
+        resolved: stats.feedback.byStatus.RESOLVED || 0,
+      },
+      revenue: {
+        monthlyDues: stats.monthlyDues.revenue,
+        reservations: stats.reservations.revenue,
+        total: stats.monthlyDues.revenue + stats.reservations.revenue,
+      },
+      recentTransactions,
+    };
+  }, [stats, recentTransactions]);
+
   return (
-    <div className="space-y-6">
+    <>
+      {/* Print View */}
+      <div className="print-only print-section">
+        <div className="mb-6 border-b-2 border-black pb-4">
+          <h1 className="text-2xl font-bold">Promenade Residence Dashboard Report</h1>
+          <p className="text-sm mt-1">
+            Generated on {printData.generatedAt}
+          </p>
+        </div>
+
+        <div className="mb-6 print-section">
+          <h2 className="text-xl font-semibold mb-4">Statistics Overview</h2>
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="text-left p-2 font-semibold border border-black">Metric</th>
+                <th className="text-left p-2 font-semibold border border-black">Value</th>
+                <th className="text-left p-2 font-semibold border border-black">Details</th>
+              </tr>
+            </thead>
+            <tbody>
+              {printData.statistics.map((stat, index) => (
+                <tr key={index}>
+                  <td className="p-2 border border-black">{stat.label}</td>
+                  <td className="p-2 font-semibold border border-black">{stat.value}</td>
+                  <td className="p-2 text-sm border border-black">{stat.details}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="mb-6 grid grid-cols-2 gap-6 print-section">
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Reservation Status</h3>
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className="text-left p-2 font-semibold border border-black">Status</th>
+                  <th className="text-right p-2 font-semibold border border-black">Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="p-2 border border-black">Approved</td>
+                  <td className="p-2 text-right border border-black">{printData.reservations.approved}</td>
+                </tr>
+                <tr>
+                  <td className="p-2 border border-black">Pending</td>
+                  <td className="p-2 text-right border border-black">{printData.reservations.pending}</td>
+                </tr>
+                <tr>
+                  <td className="p-2 border border-black">Rejected</td>
+                  <td className="p-2 text-right border border-black">{printData.reservations.rejected}</td>
+                </tr>
+                <tr>
+                  <td className="p-2 border border-black">Cancelled</td>
+                  <td className="p-2 text-right border border-black">{printData.reservations.cancelled}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Feedback Status</h3>
+            <table className="w-full">
+              <thead>
+                <tr>
+                  <th className="text-left p-2 font-semibold border border-black">Status</th>
+                  <th className="text-right p-2 font-semibold border border-black">Count</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="p-2 border border-black">New</td>
+                  <td className="p-2 text-right border border-black">{printData.feedback.new}</td>
+                </tr>
+                <tr>
+                  <td className="p-2 border border-black">In Review</td>
+                  <td className="p-2 text-right border border-black">{printData.feedback.inReview}</td>
+                </tr>
+                <tr>
+                  <td className="p-2 border border-black">Resolved</td>
+                  <td className="p-2 text-right border border-black">{printData.feedback.resolved}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div className="mb-6 print-section">
+          <h3 className="text-lg font-semibold mb-3">Revenue Breakdown</h3>
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="text-left p-2 font-semibold border border-black">Source</th>
+                <th className="text-right p-2 font-semibold border border-black">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="p-2 border border-black">Monthly Dues</td>
+                <td className="p-2 text-right border border-black">₱{printData.revenue.monthlyDues.toLocaleString()}</td>
+              </tr>
+              <tr>
+                <td className="p-2 border border-black">Reservations</td>
+                <td className="p-2 text-right border border-black">₱{printData.revenue.reservations.toLocaleString()}</td>
+              </tr>
+              <tr>
+                <td className="p-2 font-semibold border border-black">Total Revenue</td>
+                <td className="p-2 text-right font-semibold border border-black">₱{printData.revenue.total.toLocaleString()}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div className="print-section">
+          <h3 className="text-lg font-semibold mb-3">Recent Transactions</h3>
+          <table className="w-full">
+            <thead>
+              <tr>
+                <th className="text-left p-2 font-semibold border border-black">Date</th>
+                <th className="text-left p-2 font-semibold border border-black">Type</th>
+                <th className="text-left p-2 font-semibold border border-black">Resident</th>
+                <th className="text-right p-2 font-semibold border border-black">Amount</th>
+                <th className="text-left p-2 font-semibold border border-black">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {printData.recentTransactions.map((transaction, index) => (
+                <tr key={index}>
+                  <td className="p-2 border border-black">{transaction.date}</td>
+                  <td className="p-2 border border-black">{transaction.type}</td>
+                  <td className="p-2 border border-black">{transaction.resident}</td>
+                  <td className="p-2 text-right border border-black">{transaction.amount}</td>
+                  <td className="p-2 border border-black">{transaction.status}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Screen View */}
+      <div className="space-y-6 no-print">
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div className="space-y-2 flex-1">
@@ -101,14 +323,14 @@ const Page = () => {
             transactions, and property status.
           </p>
         </div>
-        <Button onClick={handlePrint} variant="primary" className="shrink-0">
+        <Button onClick={handlePrint} variant="primary" className="shrink-0 no-print">
           <IconPrinter className="h-4 w-4" />
           <span>Print Report</span>
         </Button>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {statistics.map((stat) => {
           const IconComponent = stat.icon;
           return (
@@ -138,14 +360,19 @@ const Page = () => {
         <div className="md:col-span-7">
           <CollectionAreaChart />
           <div className="mt-6">
-            <RecentTransactionsTable transactions={recentTransactions} />
+            <RecentTransactionsTable
+              transactions={recentTransactions}
+              onCtaClick={() => window.location.href = "/admin/transactions"}
+            />
           </div>
         </div>
-        <div className="md:col-span-3">
+        <div className="md:col-span-3 space-y-6">
           <AmenityReservationCalendar />
+          <ReservationStatusChart />
         </div>
       </div>
     </div>
+    </>
   );
 };
 

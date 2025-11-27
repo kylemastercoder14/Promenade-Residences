@@ -1,7 +1,14 @@
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import prisma from "@/lib/db";
 import z from "zod";
-import { createSystemLog, LogAction, LogModule, createLogDescription } from "@/lib/system-log";
+import { TRPCError } from "@trpc/server";
+import {
+  createSystemLog,
+  LogAction,
+  LogModule,
+  createLogDescription,
+} from "@/lib/system-log";
+import { authClient } from "../auth-client";
 
 const residentSchema = z.object({
   id: z.string().optional(),
@@ -44,9 +51,6 @@ export const residentsRouter = createTRPCRouter({
     }),
   getMany: protectedProcedure.query(() => {
     return prisma.resident.findMany({
-      where: {
-        isArchived: false,
-      },
       include: {
         map: {
           select: {
@@ -65,7 +69,22 @@ export const residentsRouter = createTRPCRouter({
   create: protectedProcedure
     .input(residentSchema)
     .mutation(async ({ input, ctx }) => {
-      const { id, ...data } = input;
+      const { ...data } = input;
+
+      // Ensure only one head of household per property/household
+      if (data.isHead && data.mapId) {
+        const existingHead = await prisma.resident.findFirst({
+          where: { mapId: data.mapId, isHead: true },
+        });
+
+        if (existingHead) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "This household already has a head account.",
+          });
+        }
+      }
+
       const result = await prisma.resident.create({
         data: {
           ...data,
@@ -84,7 +103,25 @@ export const residentsRouter = createTRPCRouter({
         },
       });
 
+      // Automatically create an auth user/account for head of household
+      if (result.isHead && result.emailAddress) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: result.emailAddress },
+        });
+
+        if (!existingUser) {
+          const fullName = `${result.firstName} ${result.lastName}`.trim();
+
+          await authClient.signUp.email({
+            email: result.emailAddress,
+            password: "password123",
+            name: fullName,
+          });
+        }
+      }
+
       const fullName = `${result.firstName} ${result.lastName}`;
+
       await createSystemLog({
         userId: ctx.auth.user.id,
         action: LogAction.CREATE,
@@ -97,7 +134,10 @@ export const residentsRouter = createTRPCRouter({
           fullName,
           `${result.typeOfResidency}${result.isHead ? " (Household Head)" : ""}`
         ),
-        metadata: { typeOfResidency: result.typeOfResidency, isHead: result.isHead },
+        metadata: {
+          typeOfResidency: result.typeOfResidency,
+          isHead: result.isHead,
+        },
       });
 
       return result;
@@ -109,11 +149,7 @@ export const residentsRouter = createTRPCRouter({
         throw new Error("Resident ID is required for update");
       }
 
-      const oldResident = await prisma.resident.findUnique({
-        where: { id: input.id },
-      });
-
-      const { id, ...data } = input;
+      const { ...data } = input;
       const result = await prisma.resident.update({
         where: {
           id: input.id,
@@ -190,4 +226,3 @@ export const residentsRouter = createTRPCRouter({
       return result;
     }),
 });
-

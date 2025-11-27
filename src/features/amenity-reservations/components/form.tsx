@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/incompatible-library */
 "use client";
 
 import { useMemo } from "react";
@@ -40,7 +41,7 @@ const formSchema = z
     userType: z.enum(["resident", "tenant", "visitor"]),
     userId: z.string().optional(),
     fullName: z.string().min(1, "Full name is required"),
-    amenity: z.enum(["COURT", "GAZEBO", "PARKING_AREA"]),
+    amenity: z.enum(["COURT", "GAZEBO"]),
     date: z.date(),
     startTime: z.string().min(1, "Start time is required"),
     endTime: z.string().min(1, "End time is required"),
@@ -76,7 +77,10 @@ export const ReservationForm = ({
   const trpc = useTRPC();
   const isEditMode = !!initialData;
 
-  // Fetch users for resident/tenant selection
+  // Fetch residents and users for resident/tenant selection
+  const { data: residents } = useSuspenseQuery(
+    trpc.residents.getMany.queryOptions()
+  );
   const { data: users } = useSuspenseQuery(
     trpc.accounts.getMany.queryOptions()
   );
@@ -89,7 +93,7 @@ export const ReservationForm = ({
   };
 
   const mapAmenity = (amenity: string) => {
-    return amenity as "COURT" | "GAZEBO" | "PARKING_AREA";
+    return amenity as "COURT" | "GAZEBO";
   };
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -115,20 +119,51 @@ export const ReservationForm = ({
   const endTime = form.watch("endTime");
   const isWalkIn = form.watch("isWalkIn");
 
-  // Filter users by type (resident or tenant)
-  const filteredUsers = useMemo(() => {
+  // Filter residents by typeOfResidency and match with users
+  const filteredResidentsWithUsers = useMemo(() => {
     if (userType === "visitor") return [];
-    return (
-      users?.filter((user) => {
-        if (userType === "resident") {
-          return user.role === "USER";
-        } else if (userType === "tenant") {
-          return user.role === "USER";
-        }
-        return false;
-      }) || []
-    );
-  }, [users, userType]);
+
+    // Map userType to ResidencyType
+    const residencyType = userType === "resident" ? "RESIDENT" : "TENANT";
+
+    // Filter residents by typeOfResidency and active status
+    const filteredResidents =
+      residents?.filter((resident) => {
+        if (resident.typeOfResidency !== residencyType) return false;
+        if (resident.isArchived) return false;
+        // Only include residents that have an email (needed to match with user)
+        if (!resident.emailAddress) return false;
+        return true;
+      }) || [];
+
+    // Match residents with users by email
+    const residentsWithUsers = filteredResidents
+      .map((resident) => {
+        const user = users?.find(
+          (u) =>
+            u.email.toLowerCase() === resident.emailAddress?.toLowerCase() &&
+            u.role === "USER" &&
+            !u.isArchived
+        );
+        if (!user) return null;
+
+        return {
+          resident,
+          user,
+          fullName: `${resident.firstName} ${resident.middleName || ""} ${resident.lastName}${resident.suffix ? ` ${resident.suffix}` : ""}`.trim(),
+          email: resident.emailAddress,
+          userId: user.id,
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    // Sort by full name for a nicer dropdown
+    return [...residentsWithUsers].sort((a, b) => {
+      const nameA = a.fullName.toLowerCase();
+      const nameB = b.fullName.toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+  }, [residents, users, userType]);
 
   // Calculate amount based on amenity and duration
   const calculatedAmount = useMemo(() => {
@@ -142,17 +177,15 @@ export const ReservationForm = ({
       return 60; // 60 pesos for 3 hours
     } else if (amenity === "COURT") {
       return hours * 100; // 100 pesos per hour
-    } else if (amenity === "PARKING_AREA") {
-      return hours <= 15 ? 1000 : 800; // 1000 per event (15h max), 800 monthly
     }
     return 0;
   }, [amenity, startTime, endTime]);
 
   // Auto-fill full name when user is selected
   const handleUserChange = (userId: string) => {
-    const selectedUser = filteredUsers.find((u) => u.id === userId);
-    if (selectedUser) {
-      form.setValue("fullName", selectedUser.name || selectedUser.email);
+    const selected = filteredResidentsWithUsers.find((item) => item.userId === userId);
+    if (selected) {
+      form.setValue("fullName", selected.fullName);
       form.setValue("userId", userId);
     }
   };
@@ -272,7 +305,7 @@ export const ReservationForm = ({
               )}
             />
 
-            <div className="grid lg:grid-cols-2 grid-cols-1 gap-6">
+            <div className="grid lg:grid-cols-2 grid-cols-1 items-start gap-6">
               <FormField
                 control={form.control}
                 name="userType"
@@ -324,9 +357,9 @@ export const ReservationForm = ({
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {filteredUsers.map((user) => (
-                            <SelectItem key={user.id} value={user.id}>
-                              {user.name || user.email} ({user.email})
+                          {filteredResidentsWithUsers.map((item) => (
+                            <SelectItem key={item.userId} value={item.userId}>
+                              {item.fullName} ({item.email})
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -380,9 +413,6 @@ export const ReservationForm = ({
                       <SelectContent>
                         <SelectItem value="COURT">Basketball Court</SelectItem>
                         <SelectItem value="GAZEBO">Gazebo</SelectItem>
-                        <SelectItem value="PARKING_AREA">
-                          Parking Area
-                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -498,7 +528,6 @@ export const ReservationForm = ({
                       <SelectItem value="bank transfer">
                         Bank Transfer
                       </SelectItem>
-                      <SelectItem value="check">Check</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -545,17 +574,10 @@ export const ReservationForm = ({
                   100 pesos per hour
                 </p>
               )}
-              {amenity === "PARKING_AREA" && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  {calculatedAmount === 1000
-                    ? "1000 pesos per event (15 hours max)"
-                    : "800 pesos per month"}
-                </p>
-              )}
             </div>
 
             <Button type="submit" variant="primary" disabled={isSubmitting}>
-              {isSubmitting ? "Creating..." : "Create Reservation"}
+              {isSubmitting ? "Saving Changes..." : "Save Changes"}
             </Button>
           </form>
         </Form>

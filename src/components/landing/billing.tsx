@@ -3,23 +3,27 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 const billingCards = [
   {
     title: "Register your Vehicle?",
     description: "Easily update plate numbers, decals, and parking access.",
     cta: "Get Started",
+    link: "/vehicle-registration",
     icon: <Image src="/icons/car.png" alt="Car" width={100} height={100} />,
   },
   {
     title: "Pay your monthly dues?",
     description: "Settle association fees or track outstanding balances.",
     cta: "Get Started",
+    link: "/monthly-due",
     icon: <Image src="/icons/house.png" alt="House" width={65} height={65} />,
   },
 ];
 
 export const BillingAndDiscovery = () => {
+  const router = useRouter();
   return (
     <section className="w-full bg-[#f7f4ef] py-16 text-[#1c2b1f]">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-6">
@@ -45,7 +49,7 @@ export const BillingAndDiscovery = () => {
                 <p className="text-sm text-muted-foreground">{card.description}</p>
               </div>
               <div className="mt-6 flex items-end justify-between">
-                <Button className="gap-2 rounded-full bg-[#327248] px-5 text-white hover:bg-[#28583b]">
+                <Button onClick={() => router.push(card.link)} className="gap-2 rounded-full bg-[#327248] px-5 text-white hover:bg-[#28583b]">
                   {card.cta}
                   <ArrowRight className="size-4" />
                 </Button>
@@ -55,8 +59,8 @@ export const BillingAndDiscovery = () => {
           ))}
         </div>
 
-        <div className="rounded-[32px] bg-[url('/hero.png')] bg-cover bg-center">
-          <div className="rounded-[32px] bg-[#102317]/80 p-10 text-white">
+        <div className="rounded-4xl bg-[url('/hero.png')] bg-cover bg-center">
+          <div className="rounded-4xl bg-[#102317]/80 p-10 text-white">
             <p className="text-sm uppercase tracking-[0.5em] text-white/70">Discover</p>
             <h3 className="mt-3 text-3xl font-semibold leading-snug">
               Discover a place you&apos;ll love
@@ -65,7 +69,7 @@ export const BillingAndDiscovery = () => {
               Browse available properties, explore amenities, and see what makes The Promenade
               Residence the ideal community for families and investors.
             </p>
-            <Button className="mt-6 rounded-full bg-white px-6 text-[#1c2b1f] hover:bg-white/90">
+            <Button onClick={() => router.push("/lot-availabilities")} className="mt-6 rounded-full bg-white px-6 text-[#1c2b1f] hover:bg-white/90">
               Buy Properties
             </Button>
           </div>

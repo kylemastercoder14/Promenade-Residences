@@ -1,5 +1,6 @@
 import {
   useMutation,
+  useQuery,
   useQueryClient,
   useSuspenseQuery,
 } from "@tanstack/react-query";
@@ -33,6 +34,9 @@ export const useCreateVehicleRegistration = () => {
         );
         queryClient.invalidateQueries(
           trpc.vehicleRegistrations.getOne.queryOptions({ id: data.id })
+        );
+        queryClient.invalidateQueries(
+          trpc.vehicleRegistrations.getMyVehicles.queryOptions()
         );
         toast.success("Vehicle registration created successfully");
       },
@@ -78,6 +82,9 @@ export const useArchiveOrRetrieveVehicleRegistration = () => {
         queryClient.invalidateQueries(
           trpc.vehicleRegistrations.getOne.queryOptions({ id: data.id })
         );
+        queryClient.invalidateQueries(
+          trpc.vehicleRegistrations.getMyVehicles.queryOptions()
+        );
         toast.success(
           data.isArchived
             ? "Vehicle registration archived successfully"
@@ -89,5 +96,10 @@ export const useArchiveOrRetrieveVehicleRegistration = () => {
       },
     })
   );
+};
+
+export const useGetMyVehicles = () => {
+  const trpc = useTRPC();
+  return useQuery(trpc.vehicleRegistrations.getMyVehicles.queryOptions());
 };
 

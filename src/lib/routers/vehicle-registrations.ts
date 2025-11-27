@@ -67,6 +67,60 @@ export const vehicleRegistrationsRouter = createTRPCRouter({
       },
     });
   }),
+  getMyVehicles: protectedProcedure.query(async ({ ctx }) => {
+    const userEmail = ctx.auth.user.email;
+
+    // Get current user's resident record (household head)
+    const headResident = await prisma.resident.findFirst({
+      where: {
+        emailAddress: userEmail,
+        isHead: true,
+      },
+    });
+
+    if (!headResident || !headResident.mapId) {
+      return [];
+    }
+
+    // Get all residents with the same mapId (household members)
+    const householdMembers = await prisma.resident.findMany({
+      where: {
+        mapId: headResident.mapId,
+        isArchived: false,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const memberIds = householdMembers.map((m) => m.id);
+
+    // Get all vehicles registered to household members
+    const vehicles = await prisma.vehicleRegistration.findMany({
+      where: {
+        residentId: {
+          in: memberIds,
+        },
+        isArchived: false,
+      },
+      include: {
+        resident: {
+          select: {
+            id: true,
+            firstName: true,
+            middleName: true,
+            lastName: true,
+            suffix: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    return vehicles;
+  }),
   create: protectedProcedure
     .input(vehicleRegistrationSchema.omit({ id: true }))
     .mutation(async ({ input, ctx }) => {

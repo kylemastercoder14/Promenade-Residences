@@ -207,7 +207,7 @@ export const MonthlyDueRestrictionModal = () => {
         advancePayment: m.advancePayment,
         isPaid: m.isPaid,
         isOverdue: m.isOverdue,
-        status: m.status ?? null,
+        status: m.status ?? undefined,
       };
     }).filter((item): item is NonNullable<typeof item> => item !== null);
   }, [monthsWithCarryForward, unpaidMonths]);

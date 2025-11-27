@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +28,7 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
+import { Loader2 } from "lucide-react";
 
 const images = [
   "/auth-slider/1.png",
@@ -44,7 +46,7 @@ const formSchema = z
     path: ["confirmPassword"],
   });
 
-const Page = () => {
+const ResetPasswordForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [api, setApi] = useState<CarouselApi>();
@@ -253,6 +255,23 @@ const Page = () => {
         </div>
       </CardContent>
     </Card>
+  );
+};
+
+const Page = () => {
+  return (
+    <Suspense
+      fallback={
+        <Card className="w-full">
+          <CardContent className="px-5 py-10 text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-[#1f5c34]" />
+            <p className="mt-4 text-sm text-muted-foreground">Loading...</p>
+          </CardContent>
+        </Card>
+      }
+    >
+      <ResetPasswordForm />
+    </Suspense>
   );
 };
 

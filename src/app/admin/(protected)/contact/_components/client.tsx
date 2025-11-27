@@ -15,9 +15,14 @@ const statusFilters = [
 export const Client = () => {
   const contacts = useSuspenseContacts();
 
+  // Handle both flat array and paginated response
+  const contactsData = Array.isArray(contacts.data)
+    ? contacts.data
+    : contacts.data.data;
+
   return (
     <DataTable
-      data={contacts.data}
+      data={contactsData}
       columns={columns}
       selectableFiltered={{
         title: "Filter by status",

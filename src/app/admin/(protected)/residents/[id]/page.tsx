@@ -6,6 +6,7 @@ import { Loading } from "@/components/loading";
 import { prefetchResident } from "@/lib/prefetchers/residents";
 import { Resident } from "@/features/residents/components/resident";
 import { Suspense } from "react";
+import { Role } from "@prisma/client";
 
 interface PageProps {
   params: Promise<{
@@ -14,7 +15,7 @@ interface PageProps {
 }
 
 const Page = async ({ params }: PageProps) => {
-  await requireAuth();
+  await requireAuth({ roles: [Role.SUPERADMIN, Role.ADMIN] });
   const { id } = await params;
   if (id !== "create") {
     prefetchResident(id);

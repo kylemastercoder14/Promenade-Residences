@@ -9,6 +9,18 @@ import {
   createLogDescription,
 } from "@/lib/system-log";
 import { authClient } from "../auth-client";
+import { ADMIN_FEATURE_ACCESS, hasRequiredRole } from "@/lib/rbac";
+
+const residentsProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (!hasRequiredRole(ctx.auth.user.role, ADMIN_FEATURE_ACCESS.RESIDENTS)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You do not have permission to manage residents.",
+    });
+  }
+
+  return next();
+});
 
 const residentSchema = z.object({
   id: z.string().optional(),
@@ -26,7 +38,7 @@ const residentSchema = z.object({
 });
 
 export const residentsRouter = createTRPCRouter({
-  getOne: protectedProcedure
+  getOne: residentsProcedure
     .input(
       z.object({
         id: z.string(),
@@ -49,7 +61,7 @@ export const residentsRouter = createTRPCRouter({
         },
       });
     }),
-  getMany: protectedProcedure.query(() => {
+  getMany: residentsProcedure.query(() => {
     return prisma.resident.findMany({
       include: {
         map: {
@@ -66,7 +78,7 @@ export const residentsRouter = createTRPCRouter({
       },
     });
   }),
-  create: protectedProcedure
+  create: residentsProcedure
     .input(residentSchema)
     .mutation(async ({ input, ctx }) => {
       const { ...data } = input;
@@ -142,7 +154,7 @@ export const residentsRouter = createTRPCRouter({
 
       return result;
     }),
-  update: protectedProcedure
+  update: residentsProcedure
     .input(residentSchema)
     .mutation(async ({ input, ctx }) => {
       if (!input.id) {
@@ -187,7 +199,7 @@ export const residentsRouter = createTRPCRouter({
 
       return result;
     }),
-  archiveOrRetrieve: protectedProcedure
+  archiveOrRetrieve: residentsProcedure
     .input(
       z.object({
         id: z.string(),

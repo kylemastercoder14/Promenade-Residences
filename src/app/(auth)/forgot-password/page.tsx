@@ -17,7 +17,6 @@ import {
 import Autoplay from "embla-carousel-autoplay";
 import { authClient } from "@/lib/auth-client";
 import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 
 const images = [
   "/auth-slider/1.png",
@@ -51,7 +50,6 @@ const requiredFieldsPerStep: Array<Array<keyof ForgotPasswordForm>> = [
 ];
 
 const Page = () => {
-  const router = useRouter();
   const [api, setApi] = React.useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = React.useState(0);
   const [formData, setFormData] = React.useState<ForgotPasswordForm>(initialFormState);
@@ -98,7 +96,7 @@ const Page = () => {
 
           toast.success("If an account with that email exists, a reset link has been sent to your email.");
           setActiveStep((prev) => prev + 1);
-        } catch (error) {
+        } catch {
           toast.error("An error occurred. Please try again.");
         } finally {
           setIsLoading(false);
@@ -160,7 +158,7 @@ const Page = () => {
                   } else {
                     toast.success("Reset link sent! Please check your email.");
                   }
-                } catch (error) {
+                } catch {
                   toast.error("An error occurred. Please try again.");
                 } finally {
                   setIsLoading(false);

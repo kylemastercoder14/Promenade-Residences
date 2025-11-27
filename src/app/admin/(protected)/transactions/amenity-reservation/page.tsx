@@ -10,9 +10,10 @@ import { Loading } from "@/components/loading";
 import { Client } from "./_components/client";
 import { requireAuth } from "@/lib/auth-utils";
 import { prefetchAmenityReservations } from "@/lib/prefetchers/amenity-reservations";
+import { Role } from "@prisma/client";
 
 const Page = async () => {
-  await requireAuth();
+  await requireAuth({ roles: [Role.SUPERADMIN, Role.ACCOUNTING] });
   prefetchAmenityReservations();
   return (
     <div>

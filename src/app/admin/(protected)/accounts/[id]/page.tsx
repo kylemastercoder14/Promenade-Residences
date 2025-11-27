@@ -6,6 +6,7 @@ import { Loading } from "@/components/loading";
 import { prefetchAccount } from "@/lib/prefetchers/accounts";
 import { Account } from "@/features/accounts/components/account";
 import { Suspense } from "react";
+import { Role } from "@prisma/client";
 
 interface PageProps {
   params: Promise<{
@@ -14,7 +15,7 @@ interface PageProps {
 }
 
 const Page = async ({ params }: PageProps) => {
-  await requireAuth();
+  await requireAuth({ roles: [Role.SUPERADMIN, Role.ADMIN] });
   const { id } = await params;
   if (id !== "create") {
     prefetchAccount(id);

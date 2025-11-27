@@ -7,9 +7,10 @@ import { Loading } from "@/components/loading";
 import { Client } from "./_components/client";
 import { prefetchFeedbacks } from "@/lib/prefetchers/feedback";
 import { requireAuth } from "@/lib/auth-utils";
+import { Role } from "@prisma/client";
 
 const Page = async () => {
-  await requireAuth();
+  await requireAuth({ roles: [Role.SUPERADMIN] });
   prefetchFeedbacks();
 
   return (

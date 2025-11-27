@@ -35,6 +35,7 @@ import {
   ArchiveRestore,
   WalletIcon,
   FileTextIcon,
+  Printer,
 } from "lucide-react";
 import {
   useArchiveAmenityReservation,
@@ -53,6 +54,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useRouter } from 'next/navigation';
+import { toast } from "sonner";
 
 type Reservation = {
   id: string;
@@ -244,6 +246,10 @@ const ReservationCard = ({
   const { data: reservationData } = useSuspenseAmenityReservation(
     reservation.id
   );
+  const amountToPay = reservationData?.amountToPay ?? 0;
+  const amountPaid = reservationData?.amountPaid ?? 0;
+  const paymentMethod = reservationData?.paymentMethod ?? "N/A";
+  const proofUrl = reservationData?.receiptUrl ?? null;
 
   const handleArchive = () => {
     archiveMutation.mutate({
@@ -269,6 +275,95 @@ const ReservationCard = ({
         newPaymentStatus === "PAID" ? reservationData.amountToPay : undefined,
     });
     setPaymentStatusChangeOpen(false);
+  };
+
+  const formatCurrency = (value?: number | null) =>
+    `₱${(value ?? 0).toLocaleString("en-PH", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+
+  const openReceiptWindow = (content: string) => {
+    const printWindow = window.open("", "_blank", "width=720,height=900");
+    if (!printWindow) {
+      toast.error("Unable to open the receipt window. Please allow pop-ups.");
+      return;
+    }
+    printWindow.document.write(content);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.onafterprint = () => printWindow.close();
+  };
+
+  const handlePrintReceipt = () => {
+    if (!reservationData) return;
+    const eventDate = format(new Date(reservationData.date), "MMMM d, yyyy");
+    const generatedOn = format(new Date(), "PPpp");
+    const outstanding = amountToPay - (reservationData.amountPaid ?? 0);
+
+    const html = `
+      <html>
+        <body style="font-family:Arial,sans-serif;padding:32px;color:#111;">
+          <div style="text-align:center;margin-bottom:24px;">
+            <h1 style="margin:0;font-size:22px;">Promenade Residences</h1>
+            <p style="margin:4px 0;font-size:12px;">Official Amenity Reservation Receipt</p>
+            <h2 style="margin:12px 0 0;font-size:18px;">${reservationData.amenity} Reservation</h2>
+          </div>
+          <div style="margin-bottom:16px;font-size:12px;line-height:1.5;">
+            <strong>Reservation ID:</strong> ${reservationData.id}<br/>
+            <strong>Generated On:</strong> ${generatedOn}
+          </div>
+          <div style="margin-bottom:16px;font-size:12px;line-height:1.5;">
+            <strong>Reservee:</strong> ${reservationData.fullName}<br/>
+            <strong>User Type:</strong> ${reservationData.userType}<br/>
+            <strong>Amenity:</strong> ${reservationData.amenity}<br/>
+            <strong>Date & Time:</strong> ${eventDate}, ${reservationData.startTime} - ${reservationData.endTime}<br/>
+            <strong>Guests:</strong> ${reservationData.numberOfGuests} pax
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:16px;">
+            <thead>
+              <tr>
+                <th style="text-align:left;border-bottom:1px solid #999;padding:6px;">Description</th>
+                <th style="text-align:right;border-bottom:1px solid #999;padding:6px;">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="padding:6px;border-bottom:1px solid #eee;">Reservation Fee</td>
+                <td style="padding:6px;border-bottom:1px solid #eee;text-align:right;">${formatCurrency(amountToPay)}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px;border-bottom:1px solid #eee;">Amount Paid</td>
+                <td style="padding:6px;border-bottom:1px solid #eee;text-align:right;">${formatCurrency(reservationData.amountPaid)}</td>
+              </tr>
+              <tr>
+                <td style="padding:6px;border-bottom:1px solid #eee;">Outstanding Balance</td>
+                <td style="padding:6px;border-bottom:1px solid #eee;text-align:right;">${formatCurrency(outstanding)}</td>
+              </tr>
+            </tbody>
+          </table>
+          <div style="font-size:12px;margin-bottom:4px;">
+            <strong>Payment Method:</strong> ${paymentMethod}
+          </div>
+          <div style="font-size:12px;margin-bottom:4px;">
+            <strong>Payment Status:</strong> ${reservationData.paymentStatus}
+          </div>
+          <div style="font-size:12px;margin-bottom:16px;">
+            <strong>Proof of Payment:</strong> ${
+              reservationData.receiptUrl
+                ? "Attached in system"
+                : "Not submitted"
+            }
+          </div>
+          <p style="font-size:11px;color:#555;margin-top:24px;">
+            This is a system-generated receipt. Please keep a copy for your records.
+          </p>
+        </body>
+      </html>
+    `;
+
+    openReceiptWindow(html);
   };
 
   return (
@@ -356,6 +451,35 @@ const ReservationCard = ({
             {reservation.paymentStatus}
           </Badge>
         </p>
+        <div className="flex justify-between items-center gap-2 mt-2">
+          {proofUrl ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={(e) => {
+                e.stopPropagation();
+                window.open(proofUrl, "_blank");
+              }}
+            >
+              View proof of payment
+            </Button>
+          ) : (
+            <span className="text-xs text-muted-foreground">
+              Proof of payment not uploaded
+            </span>
+          )}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePrintReceipt();
+            }}
+          >
+            <Printer className="h-4 w-4" />
+            Print receipt
+          </Button>
+        </div>
       </div>
 
       {/* Status Change Dialog */}

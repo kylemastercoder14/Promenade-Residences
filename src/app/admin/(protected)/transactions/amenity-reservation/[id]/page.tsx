@@ -4,8 +4,9 @@ import { ErrorBoundary } from "react-error-boundary";
 import { Error } from "@/components/error";
 import { Loading } from "@/components/loading";
 import { Suspense } from "react";
-import { prefetchAmenityReservation } from '@/lib/prefetchers/amenity-reservations';
-import { AmenityReservation } from '@/features/amenity-reservations/components/amenity-reservation';
+import { prefetchAmenityReservation } from "@/lib/prefetchers/amenity-reservations";
+import { AmenityReservation } from "@/features/amenity-reservations/components/amenity-reservation";
+import { Role } from "@prisma/client";
 
 interface PageProps {
   params: Promise<{
@@ -14,7 +15,7 @@ interface PageProps {
 }
 
 const Page = async ({ params }: PageProps) => {
-  await requireAuth();
+  await requireAuth({ roles: [Role.SUPERADMIN, Role.ACCOUNTING] });
 
   const { id } = await params;
   if (id !== "create") {

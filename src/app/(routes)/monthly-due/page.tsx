@@ -336,6 +336,7 @@ const Page = () => {
                               advancePayment: m.advancePayment,
                               isPaid: m.isPaid,
                               isOverdue: m.isOverdue,
+                              status: m.status ?? null,
                             };
                           });
                         })()}
@@ -380,6 +381,10 @@ const Page = () => {
                               monthsWithCarryForward.find(
                                 (m) => m.month === selectedMonth
                               )?.isOverdue || false,
+                            status:
+                              monthsWithCarryForward.find(
+                                (m) => m.month === selectedMonth
+                              )?.status || null,
                           }
                         }
                         onSuccess={handlePaymentSuccess}
@@ -526,8 +531,27 @@ const Page = () => {
                                   }
                                 }}
                               >
-                                <div className="text-sm font-semibold">
-                                  {monthData.monthName}
+                                <div className="flex items-center justify-between text-sm font-semibold">
+                                  <span>{monthData.monthName}</span>
+                                  {monthData.status && (
+                                    <span
+                                      className={cn(
+                                        "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase",
+                                        monthData.status === "APPROVED" &&
+                                          "bg-green-100 text-green-700",
+                                        monthData.status === "PENDING" &&
+                                          "bg-amber-100 text-amber-800",
+                                        monthData.status === "REJECTED" &&
+                                          "bg-red-100 text-red-700"
+                                      )}
+                                    >
+                                      {monthData.status === "PENDING"
+                                        ? "Pending"
+                                        : monthData.status === "APPROVED"
+                                          ? "Approved"
+                                          : "Needs review"}
+                                    </span>
+                                  )}
                                 </div>
                                 <div className="text-xs mt-1 space-y-1">
                                   <div className="flex justify-between">

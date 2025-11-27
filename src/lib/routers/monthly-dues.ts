@@ -1,9 +1,27 @@
 import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import prisma from "@/lib/db";
 import z from "zod";
-import { createSystemLog, LogAction, LogModule, createLogDescription } from "@/lib/system-log";
+import { TRPCError } from "@trpc/server";
+import { MonthlyDueStatus } from "@prisma/client";
+import {
+  createSystemLog,
+  LogAction,
+  LogModule,
+  createLogDescription,
+} from "@/lib/system-log";
+import { ADMIN_FEATURE_ACCESS, hasRequiredRole } from "@/lib/rbac";
 
 const MONTHLY_DUE_AMOUNT = 750;
+
+const accountingProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (!hasRequiredRole(ctx.auth.user.role, ADMIN_FEATURE_ACCESS.TRANSACTIONS)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You do not have permission to approve monthly dues.",
+    });
+  }
+  return next();
+});
 
 const monthlyDueSchema = z.object({
   id: z.string().optional(),
@@ -63,6 +81,7 @@ export const monthlyDuesRouter = createTRPCRouter({
         const isOverdue = !isPaid && month < currentMonth;
         const isCurrentMonth = month === currentMonth;
         const isFutureMonth = month > currentMonth;
+        const latestPayment = monthPayments[monthPayments.length - 1];
 
         return {
           month,
@@ -78,6 +97,7 @@ export const monthlyDuesRouter = createTRPCRouter({
           isOverdue,
           isCurrentMonth,
           isFutureMonth,
+          status: latestPayment?.status ?? null,
           payments: monthPayments,
         };
       });
@@ -244,12 +264,16 @@ export const monthlyDuesRouter = createTRPCRouter({
             paymentMethod: paymentData.paymentMethod,
             notes: paymentData.notes || existing.notes,
             attachment: paymentData.attachment || existing.attachment,
+            status: MonthlyDueStatus.PENDING,
           },
         });
       } else {
         // Create new payment
         result = await prisma.monthlyDue.create({
-          data: paymentData,
+          data: {
+            ...paymentData,
+            status: MonthlyDueStatus.PENDING,
+          },
         });
       }
 
@@ -289,6 +313,7 @@ export const monthlyDuesRouter = createTRPCRouter({
               where: { id: nextMonthPayment.id },
               data: {
                 amountPaid: nextMonthPayment.amountPaid + excess,
+                status: MonthlyDueStatus.PENDING,
               },
             });
           } else {
@@ -300,6 +325,7 @@ export const monthlyDuesRouter = createTRPCRouter({
                 amountPaid: excess,
                 paymentMethod: input.paymentMethod,
                 notes: `Advance payment from ${new Date(input.year, input.month - 1, 1).toLocaleString("default", { month: "long" })} ${input.year}`,
+                status: MonthlyDueStatus.PENDING,
               },
             });
           }
@@ -428,6 +454,7 @@ export const monthlyDuesRouter = createTRPCRouter({
               paymentMethod: commonData.paymentMethod,
               notes: commonData.notes || existing.notes,
               attachment: commonData.attachment || existing.attachment,
+              status: MonthlyDueStatus.PENDING,
             },
           });
         } else {
@@ -440,6 +467,7 @@ export const monthlyDuesRouter = createTRPCRouter({
               paymentMethod: commonData.paymentMethod,
               notes: commonData.notes,
               attachment: commonData.attachment,
+              status: MonthlyDueStatus.PENDING,
             },
           });
         }
@@ -487,6 +515,7 @@ export const monthlyDuesRouter = createTRPCRouter({
               where: { id: nextMonthPayment.id },
               data: {
                 amountPaid: nextMonthPayment.amountPaid + totalExcess,
+                status: MonthlyDueStatus.PENDING,
               },
             });
           } else {
@@ -498,6 +527,7 @@ export const monthlyDuesRouter = createTRPCRouter({
                 amountPaid: totalExcess,
                 paymentMethod: input.paymentMethod,
                 notes: `Advance payment from batch payment (${payments.length} months)`,
+                status: MonthlyDueStatus.PENDING,
               },
             });
           }
@@ -574,6 +604,65 @@ export const monthlyDuesRouter = createTRPCRouter({
       });
 
       return results;
+    }),
+
+  updateStatus: accountingProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        status: z.nativeEnum(MonthlyDueStatus),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const payment = await prisma.monthlyDue.findUnique({
+        where: { id: input.id },
+        include: {
+          resident: {
+            select: { firstName: true, lastName: true },
+          },
+        },
+      });
+
+      if (!payment) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Monthly due payment not found",
+        });
+      }
+
+      const result = await prisma.monthlyDue.update({
+        where: { id: input.id },
+        data: {
+          status: input.status,
+        },
+      });
+
+      const monthName = new Date(result.year, result.month - 1, 1).toLocaleString("default", { month: "long" });
+      const residentName = payment.resident
+        ? `${payment.resident.firstName} ${payment.resident.lastName}`
+        : payment.residentId;
+
+      await createSystemLog({
+        userId: ctx.auth.user.id,
+        action: LogAction.STATUS_CHANGE,
+        module: LogModule.MONTHLY_DUES,
+        entityId: result.id,
+        entityType: "MonthlyDue",
+        description: createLogDescription(
+          LogAction.STATUS_CHANGE,
+          "Monthly Due Status",
+          `${residentName} - ${monthName} ${result.year}`,
+          `Status: ${input.status}`
+        ),
+        metadata: {
+          residentId: result.residentId,
+          month: result.month,
+          year: result.year,
+          status: input.status,
+        },
+      });
+
+      return result;
     }),
 
   // Delete a payment (for corrections)

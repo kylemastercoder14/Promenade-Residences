@@ -35,8 +35,13 @@ export const useUpdateContactStatus = () => {
 
   return useMutation(
     trpc.contact.updateStatus.mutationOptions({
-      onSuccess: () => {
+      onSuccess: (_data, variables) => {
         queryClient.invalidateQueries(trpc.contact.getMany.queryOptions());
+        if (variables?.id) {
+          queryClient.invalidateQueries(
+            trpc.contact.getOne.queryOptions({ id: variables.id })
+          );
+        }
         toast.success("Contact status updated successfully");
       },
       onError: (error) => {
@@ -52,12 +57,39 @@ export const useArchiveContact = () => {
 
   return useMutation(
     trpc.contact.archive.mutationOptions({
-      onSuccess: () => {
+      onSuccess: (_data, variables) => {
         queryClient.invalidateQueries(trpc.contact.getMany.queryOptions());
+        if (variables?.id) {
+          queryClient.invalidateQueries(
+            trpc.contact.getOne.queryOptions({ id: variables.id })
+          );
+        }
         toast.success("Contact archived successfully");
       },
       onError: (error) => {
         toast.error(error?.message || "Failed to archive contact");
+      },
+    })
+  );
+};
+
+export const useReplyToContact = () => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    trpc.contact.reply.mutationOptions({
+      onSuccess: (_data, variables) => {
+        queryClient.invalidateQueries(trpc.contact.getMany.queryOptions());
+        if (variables?.id) {
+          queryClient.invalidateQueries(
+            trpc.contact.getOne.queryOptions({ id: variables.id })
+          );
+        }
+        toast.success("Reply sent successfully");
+      },
+      onError: (error) => {
+        toast.error(error?.message || "Failed to send reply");
       },
     })
   );

@@ -9,10 +9,11 @@ import { Error } from "@/components/error";
 import { Suspense } from "react";
 import { Loading } from "@/components/loading";
 import { Client } from "./_components/client";
-import { requireAuth } from '@/lib/auth-utils';
+import { requireAuth } from "@/lib/auth-utils";
+import { Role } from "@prisma/client";
 
 const Page = async () => {
-  await requireAuth();
+  await requireAuth({ roles: [Role.SUPERADMIN, Role.ADMIN] });
   prefetchAccounts();
   return (
     <div>

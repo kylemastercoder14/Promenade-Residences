@@ -5,7 +5,8 @@ import { Error } from "@/components/error";
 import { Loading } from "@/components/loading";
 import { Map } from "@/features/maps/components/map";
 import { Suspense } from "react";
-import { prefetchMap } from '@/lib/prefetchers/maps';
+import { prefetchMap } from "@/lib/prefetchers/maps";
+import { Role } from "@prisma/client";
 
 interface PageProps {
   params: Promise<{
@@ -14,7 +15,7 @@ interface PageProps {
 }
 
 const Page = async ({ params }: PageProps) => {
-  await requireAuth();
+  await requireAuth({ roles: [Role.SUPERADMIN] });
   const { id } = await params;
   if (id !== "create") {
 	prefetchMap(id);

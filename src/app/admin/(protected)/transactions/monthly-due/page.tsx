@@ -4,9 +4,10 @@ import { ErrorBoundary } from "react-error-boundary";
 import { Error } from "@/components/error";
 import { Client } from "./_components/client";
 import { requireAuth } from "@/lib/auth-utils";
+import { Role } from "@prisma/client";
 
 const Page = async () => {
-  await requireAuth();
+  await requireAuth({ roles: [Role.SUPERADMIN, Role.ACCOUNTING] });
   // Note: Prefetch removed - client-side fetching handles authentication properly
   // Server-side prefetch was causing 401 errors due to auth context timing
 

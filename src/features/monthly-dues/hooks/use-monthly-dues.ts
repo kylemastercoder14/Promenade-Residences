@@ -109,3 +109,28 @@ export const useDeletePayment = () => {
   );
 };
 
+export const useUpdateMonthlyDueStatus = () => {
+  const queryClient = useQueryClient();
+  const trpc = useTRPC();
+
+  return useMutation(
+    trpc.monthlyDues.updateStatus.mutationOptions({
+      onSuccess: (data) => {
+        queryClient.invalidateQueries(
+          trpc.monthlyDues.getByResident.queryOptions({
+            residentId: data.residentId,
+            year: data.year,
+          })
+        );
+        queryClient.invalidateQueries({
+          queryKey: [["monthlyDues", "getResidentsSummary"]],
+        });
+        toast.success(`Monthly due marked as ${data.status.toLowerCase()}`);
+      },
+      onError: (error) => {
+        toast.error(`Failed to update status: ${error.message}`);
+      },
+    })
+  );
+};
+

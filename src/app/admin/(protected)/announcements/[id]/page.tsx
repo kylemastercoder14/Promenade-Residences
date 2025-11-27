@@ -6,6 +6,7 @@ import { Loading } from "@/components/loading";
 import { Suspense } from "react";
 import { prefetchAnnouncement } from "@/lib/prefetchers/announcements";
 import { Announcement } from "@/features/announcements/components/announcement";
+import { Role } from "@prisma/client";
 
 interface PageProps {
   params: Promise<{
@@ -14,8 +15,8 @@ interface PageProps {
 }
 
 const Page = async ({ params }: PageProps) => {
-  await requireAuth();
-
+  const session = await requireAuth({ roles: [Role.SUPERADMIN, Role.ADMIN] });
+  const userRole = (session.user.role as Role) ?? Role.USER;
   const { id } = await params;
   if (id !== "create") {
     prefetchAnnouncement(id);
@@ -29,7 +30,10 @@ const Page = async ({ params }: PageProps) => {
         }
       >
         <Suspense fallback={<Loading message="Loading announcement..." />}>
-          <Announcement announcementId={id} />
+          <Announcement
+            announcementId={id}
+            canPublish={userRole === Role.SUPERADMIN}
+          />
         </Suspense>
       </ErrorBoundary>
     </HydrateClient>

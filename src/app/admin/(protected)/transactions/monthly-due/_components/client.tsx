@@ -9,11 +9,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loading } from "@/components/loading";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import { useCurrentUser } from "@/features/settings/hooks/use-settings";
 
 export const Client = () => {
   const [year, setYear] = useState(new Date().getFullYear());
   const [searchTerm, setSearchTerm] = useState("");
   const { data: residentsSummary, isLoading, error, refetch } = useSuspenseResidentsSummary(year);
+  const { data: currentUser } = useCurrentUser();
+  const canApprove =
+    currentUser?.role === "ACCOUNTING" || currentUser?.role === "SUPERADMIN";
 
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
@@ -220,6 +224,7 @@ export const Client = () => {
                 key={resident.id}
                 residentId={resident.id}
                 year={year}
+                canApprove={canApprove}
               />
             );
           })}

@@ -6,6 +6,7 @@ import { Loading } from "@/components/loading";
 import { prefetchVehicleRegistration } from "@/lib/prefetchers/vehicle-registrations";
 import { VehicleRegistration } from "@/features/vehicle-registrations/components/vehicle-registration";
 import { Suspense } from "react";
+import { Role } from "@prisma/client";
 
 interface PageProps {
   params: Promise<{
@@ -14,7 +15,7 @@ interface PageProps {
 }
 
 const Page = async ({ params }: PageProps) => {
-  await requireAuth();
+  await requireAuth({ roles: [Role.SUPERADMIN, Role.ACCOUNTING] });
   const { id } = await params;
   if (id !== "create") {
     prefetchVehicleRegistration(id);

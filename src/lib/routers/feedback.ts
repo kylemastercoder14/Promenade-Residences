@@ -6,6 +6,19 @@ import {
 import prisma from "@/lib/db";
 import z from "zod";
 import { FeedbackCategory, FeedbackStatus } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
+import { ADMIN_FEATURE_ACCESS, hasRequiredRole } from "@/lib/rbac";
+
+const feedbackProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (!hasRequiredRole(ctx.auth.user.role, ADMIN_FEATURE_ACCESS.FEEDBACK)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You do not have permission to manage feedback.",
+    });
+  }
+
+  return next();
+});
 
 const feedbackCreateSchema = z.object({
   residentName: z.string().min(2, "Name is required"),
@@ -29,7 +42,7 @@ const feedbackCreateSchema = z.object({
 });
 
 export const feedbackRouter = createTRPCRouter({
-  getMany: protectedProcedure
+  getMany: feedbackProcedure
     .input(
       z
         .object({

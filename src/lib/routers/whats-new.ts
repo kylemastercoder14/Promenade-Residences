@@ -7,6 +7,8 @@ import {
   LogModule,
   createLogDescription,
 } from "@/lib/system-log";
+import { TRPCError } from "@trpc/server";
+import { ADMIN_FEATURE_ACCESS, hasRequiredRole, normalizeRole } from "@/lib/rbac";
 
 const whatsNewSchema = z.object({
   id: z.string().optional(),
@@ -33,6 +35,17 @@ const whatsNewSchema = z.object({
   attachmentUrl: z.string().optional(),
   publication: z.enum(["PUBLISHED", "DRAFT"]).default("DRAFT"),
   isFeatured: z.boolean().default(false),
+});
+
+const adminWhatsNewProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (!hasRequiredRole(ctx.auth.user.role, ADMIN_FEATURE_ACCESS.WHATS_NEW)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You do not have permission to manage news and events.",
+    });
+  }
+
+  return next();
 });
 
 export const whatsNewRouter = createTRPCRouter({
@@ -130,7 +143,7 @@ export const whatsNewRouter = createTRPCRouter({
     return summary;
   }),
 
-  getOne: protectedProcedure
+  getOne: adminWhatsNewProcedure
     .input(
       z.object({
         id: z.string(),
@@ -144,7 +157,7 @@ export const whatsNewRouter = createTRPCRouter({
       });
     }),
 
-  getMany: protectedProcedure
+  getMany: adminWhatsNewProcedure
     .input(
       z
         .object({
@@ -224,13 +237,17 @@ export const whatsNewRouter = createTRPCRouter({
       };
     }),
 
-  create: protectedProcedure
+  create: adminWhatsNewProcedure
     .input(whatsNewSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...data } = input;
+      const userRole = normalizeRole(ctx.auth.user.role);
+      const canPublish = hasRequiredRole(userRole, ADMIN_FEATURE_ACCESS.WHATS_NEW_PUBLISH);
+
       const result = await prisma.whatsNew.create({
         data: {
           ...data,
+          publication: canPublish ? data.publication : "DRAFT",
           category: data.category || null,
         },
       });
@@ -253,7 +270,7 @@ export const whatsNewRouter = createTRPCRouter({
       return result;
     }),
 
-  update: protectedProcedure
+  update: adminWhatsNewProcedure
     .input(whatsNewSchema)
     .mutation(async ({ input, ctx }) => {
       if (!input.id) {
@@ -265,12 +282,16 @@ export const whatsNewRouter = createTRPCRouter({
       });
 
       const { id, ...data } = input;
+      const userRole = normalizeRole(ctx.auth.user.role);
+      const canPublish = hasRequiredRole(userRole, ADMIN_FEATURE_ACCESS.WHATS_NEW_PUBLISH);
+
       const result = await prisma.whatsNew.update({
         where: {
           id: input.id,
         },
         data: {
           ...data,
+          publication: canPublish ? data.publication : "DRAFT",
           category: data.category || null,
         },
       });
@@ -291,7 +312,7 @@ export const whatsNewRouter = createTRPCRouter({
       return result;
     }),
 
-  archive: protectedProcedure
+  archive: adminWhatsNewProcedure
     .input(
       z.object({
         id: z.string(),

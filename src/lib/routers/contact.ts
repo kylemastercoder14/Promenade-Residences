@@ -6,6 +6,20 @@ import {
 import prisma from "@/lib/db";
 import z from "zod";
 import { ContactStatus } from "@prisma/client";
+import { TRPCError } from "@trpc/server";
+import { ADMIN_FEATURE_ACCESS, hasRequiredRole } from "@/lib/rbac";
+import { sendMail } from "@/lib/email";
+
+const contactProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (!hasRequiredRole(ctx.auth.user.role, ADMIN_FEATURE_ACCESS.CONTACT)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You do not have permission to access contact messages.",
+    });
+  }
+
+  return next();
+});
 
 const contactCreateSchema = z.object({
   fullName: z.string().min(2, "Full name is required").max(100),
@@ -21,7 +35,7 @@ const contactCreateSchema = z.object({
 });
 
 export const contactRouter = createTRPCRouter({
-  getMany: protectedProcedure
+  getMany: contactProcedure
     .input(
       z
         .object({
@@ -85,11 +99,27 @@ export const contactRouter = createTRPCRouter({
       });
     }),
 
-  getOne: protectedProcedure
+  getOne: contactProcedure
     .input(z.object({ id: z.string() }))
     .query(({ input }) => {
       return prisma.contact.findUniqueOrThrow({
         where: { id: input.id },
+        include: {
+          replies: {
+            orderBy: { createdAt: "asc" },
+            include: {
+              admin: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  role: true,
+                  image: true,
+                },
+              },
+            },
+          },
+        },
       });
     }),
 
@@ -107,7 +137,7 @@ export const contactRouter = createTRPCRouter({
       });
     }),
 
-  updateStatus: protectedProcedure
+  updateStatus: contactProcedure
     .input(
       z.object({
         id: z.string(),
@@ -121,13 +151,78 @@ export const contactRouter = createTRPCRouter({
       });
     }),
 
-  archive: protectedProcedure
+  archive: contactProcedure
     .input(z.object({ id: z.string(), isArchived: z.boolean() }))
     .mutation(async ({ input }) => {
       return prisma.contact.update({
         where: { id: input.id },
         data: { isArchived: input.isArchived },
       });
+    }),
+
+  reply: contactProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        message: z.string().min(5, "Reply must contain at least 5 characters"),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const contact = await prisma.contact.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!contact) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Contact message not found",
+        });
+      }
+
+      const reply = await prisma.contactReply.create({
+        data: {
+          contactId: input.id,
+          message: input.message,
+          adminId: ctx.auth.user.id,
+        },
+        include: {
+          admin: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              role: true,
+              image: true,
+            },
+          },
+        },
+      });
+
+      if (contact.status === ContactStatus.NEW) {
+        await prisma.contact.update({
+          where: { id: contact.id },
+          data: { status: ContactStatus.IN_PROGRESS },
+        });
+      }
+
+      const htmlMessage = `
+        <p>Hi ${contact.fullName},</p>
+        <p>${input.message.replace(/\n/g, "<br />")}</p>
+        <p>— ${ctx.auth.user.name || "Promenade Residences Admin"}</p>
+      `;
+
+      try {
+        await sendMail(
+          contact.email,
+          `Re: ${contact.subject}`,
+          input.message,
+          htmlMessage
+        );
+      } catch (error) {
+        console.error("Failed to send contact reply email:", error);
+      }
+
+      return reply;
     }),
 });
 

@@ -33,6 +33,7 @@ import {
 import { Announcement } from "@prisma/client";
 import { format } from "date-fns";
 import ImageUpload from "@/components/image-upload";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -47,8 +48,10 @@ const formSchema = z.object({
 
 export const AnnouncementForm = ({
   initialData,
+  canPublish,
 }: {
   initialData: Announcement | null;
+  canPublish: boolean;
 }) => {
   const router = useRouter();
   const createAnnouncement = useCreateAnnouncement();
@@ -79,13 +82,22 @@ export const AnnouncementForm = ({
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
+      const payload = {
+        ...data,
+        publication: canPublish ? data.publication : "DRAFT",
+      };
+
+      if (!canPublish && data.publication === "PUBLISHED") {
+        toast.info("Only the superadmin can publish announcements. Saved as draft for approval.");
+      }
+
       if (isEditMode && initialData) {
         await updateAnnouncement.mutateAsync({
           id: initialData.id,
-          ...data,
+          ...payload,
         });
       } else {
-        await createAnnouncement.mutateAsync(data);
+        await createAnnouncement.mutateAsync(payload);
       }
       router.push("/admin/announcements");
     } catch (error) {
@@ -160,32 +172,39 @@ export const AnnouncementForm = ({
                  )}
                />
 
-               <FormField
-                 control={form.control}
-                 name="publication"
-                 render={({ field }) => (
-                   <FormItem>
-                     <FormLabel>
-                       Publication Status <span className="text-destructive">*</span>
-                     </FormLabel>
-                     <Select
-                       onValueChange={field.onChange}
-                       defaultValue={field.value}
-                     >
-                       <FormControl>
-                         <SelectTrigger className="w-full">
-                           <SelectValue placeholder="Select status" />
-                         </SelectTrigger>
-                       </FormControl>
-                       <SelectContent>
-                         <SelectItem value="DRAFT">Draft</SelectItem>
-                         <SelectItem value="PUBLISHED">Published</SelectItem>
-                       </SelectContent>
-                     </Select>
-                     <FormMessage />
-                   </FormItem>
-                 )}
-               />
+              <FormField
+                control={form.control}
+                name="publication"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Publication Status <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="DRAFT">Draft</SelectItem>
+                        <SelectItem value="PUBLISHED" disabled={!canPublish}>
+                          Published { !canPublish ? " (Superadmin only)" : "" }
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {!canPublish && (
+                      <FormDescription>
+                        Admin submissions stay in draft until a superadmin publishes them.
+                      </FormDescription>
+                    )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
              <FormField

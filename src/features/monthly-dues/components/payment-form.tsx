@@ -27,7 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useCreatePayment, useCreateBatchPayment } from "../hooks/use-monthly-dues";
 import ImageUpload from "@/components/image-upload";
 import { X } from "lucide-react";
-import { PaymentMethod } from '@prisma/client';
+import { PaymentMethod, MonthlyDueStatus } from "@prisma/client";
 
 const MONTHLY_DUE_AMOUNT = 750;
 
@@ -51,6 +51,7 @@ interface MonthData {
   advancePayment: number;
   isPaid: boolean;
   isOverdue: boolean;
+  status?: MonthlyDueStatus | null;
 }
 
 interface PaymentFormProps {
@@ -173,6 +174,9 @@ export const PaymentForm = ({
         </div>
       </CardHeader>
       <CardContent>
+        <div className="mb-4 rounded-md border border-dashed border-muted-foreground/30 bg-muted/40 p-3 text-sm text-muted-foreground">
+          Submitted payments are marked as pending until the accounting team reviews and approves them.
+        </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             {/* Payment Summary */}
@@ -214,6 +218,12 @@ export const PaymentForm = ({
                     ₱{monthData.balance.toFixed(2)}
                   </span>
                 </div>
+                {monthData.status && (
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Current Status:</span>
+                    <span className="font-semibold capitalize">{monthData.status.toLowerCase()}</span>
+                  </div>
+                )}
                 {excessAmount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Excess Amount:</span>

@@ -9,8 +9,10 @@ import { useSuspenseAnnouncement } from "@/features/announcements/hooks/use-anno
 
 export const Announcement = ({
   announcementId,
+  canPublish,
 }: {
   announcementId: string;
+  canPublish: boolean;
 }) => {
   const isCreateMode = announcementId === "create";
   const { data: announcement } = isCreateMode
@@ -23,7 +25,7 @@ export const Announcement = ({
       fallback={<Error title="Error" message="Failed to load announcement" />}
     >
       <Suspense fallback={<Loading message="Loading announcement..." />}>
-        <AnnouncementForm initialData={announcement} />
+        <AnnouncementForm initialData={announcement} canPublish={canPublish} />
       </Suspense>
     </ErrorBoundary>
   );

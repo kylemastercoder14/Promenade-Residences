@@ -2,6 +2,19 @@ import { createTRPCRouter, protectedProcedure } from "@/trpc/init";
 import prisma from "@/lib/db";
 import z from "zod";
 import { createSystemLog, LogAction, LogModule, createLogDescription } from "@/lib/system-log";
+import { TRPCError } from "@trpc/server";
+import { ADMIN_FEATURE_ACCESS, hasRequiredRole } from "@/lib/rbac";
+
+const adminVehicleProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (!hasRequiredRole(ctx.auth.user.role, ADMIN_FEATURE_ACCESS.VEHICLE_REGISTRATIONS)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You do not have permission to manage vehicle registrations.",
+    });
+  }
+
+  return next();
+});
 
 const vehicleRegistrationSchema = z.object({
   id: z.string().optional(),
@@ -22,7 +35,7 @@ const vehicleRegistrationSchema = z.object({
 });
 
 export const vehicleRegistrationsRouter = createTRPCRouter({
-  getOne: protectedProcedure
+  getOne: adminVehicleProcedure
     .input(
       z.object({
         id: z.string(),
@@ -46,7 +59,7 @@ export const vehicleRegistrationsRouter = createTRPCRouter({
         },
       });
     }),
-  getMany: protectedProcedure.query(() => {
+  getMany: adminVehicleProcedure.query(() => {
     return prisma.vehicleRegistration.findMany({
       where: {
         isArchived: false,
@@ -121,7 +134,7 @@ export const vehicleRegistrationsRouter = createTRPCRouter({
 
     return vehicles;
   }),
-  create: protectedProcedure
+  create: adminVehicleProcedure
     .input(vehicleRegistrationSchema.omit({ id: true }))
     .mutation(async ({ input, ctx }) => {
       const result = await prisma.vehicleRegistration.create({
@@ -158,7 +171,7 @@ export const vehicleRegistrationsRouter = createTRPCRouter({
 
       return result;
     }),
-  update: protectedProcedure
+  update: adminVehicleProcedure
     .input(vehicleRegistrationSchema.extend({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
       const oldVehicle = await prisma.vehicleRegistration.findUnique({
@@ -201,7 +214,7 @@ export const vehicleRegistrationsRouter = createTRPCRouter({
 
       return result;
     }),
-  archiveOrRetrieve: protectedProcedure
+  archiveOrRetrieve: adminVehicleProcedure
     .input(
       z.object({
         id: z.string(),

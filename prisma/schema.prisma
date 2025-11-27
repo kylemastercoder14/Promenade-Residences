@@ -29,6 +29,7 @@ model User {
   amenityReservations AmenityReservation[]
   systemLogs    SystemLog[]
   feedbacks     Feedback[]
+  contactReplies ContactReply[]
 
   @@map("user")
 }
@@ -256,6 +257,12 @@ enum PaymentMethod {
   OTHER_BANK
 }
 
+enum MonthlyDueStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model MonthlyDue {
   id            String        @id @default(uuid())
   residentId    String
@@ -266,6 +273,7 @@ model MonthlyDue {
   paymentMethod PaymentMethod?
   notes         String?       @db.Text
   attachment    String?
+  status        MonthlyDueStatus @default(PENDING)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @default(now()) @updatedAt
 
@@ -422,9 +430,24 @@ model Contact {
   isArchived    Boolean       @default(false)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @default(now()) @updatedAt
+  replies       ContactReply[]
 
   @@index([status])
   @@index([isArchived])
   @@index([createdAt])
   @@map("contact")
+}
+
+model ContactReply {
+  id        String   @id @default(uuid())
+  contact   Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  contactId String
+  admin     User?    @relation(fields: [adminId], references: [id])
+  adminId   String?
+  message   String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([contactId])
+  @@index([adminId])
+  @@map("contact_reply")
 }

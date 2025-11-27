@@ -33,6 +33,7 @@ import {
 import { WhatsNew } from "@prisma/client";
 import ImageUpload from "@/components/image-upload";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -62,8 +63,10 @@ const formSchema = z.object({
 
 export const WhatsNewForm = ({
   initialData,
+  canPublish,
 }: {
   initialData: WhatsNew | null;
+  canPublish: boolean;
 }) => {
   const router = useRouter();
   const createWhatsNew = useCreateWhatsNew();
@@ -104,13 +107,22 @@ export const WhatsNewForm = ({
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     try {
+      const payload = {
+        ...data,
+        publication: canPublish ? data.publication : "DRAFT",
+      };
+
+      if (!canPublish && data.publication === "PUBLISHED") {
+        toast.info("Only the superadmin can publish News & Events. Saved as draft for approval.");
+      }
+
       if (isEditMode && initialData) {
         await updateWhatsNew.mutateAsync({
           id: initialData.id,
-          ...data,
+          ...payload,
         });
       } else {
-        await createWhatsNew.mutateAsync(data);
+        await createWhatsNew.mutateAsync(payload);
       }
       router.push("/admin/whats-new");
     } catch (error) {
@@ -244,9 +256,16 @@ export const WhatsNewForm = ({
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="DRAFT">Draft</SelectItem>
-                        <SelectItem value="PUBLISHED">Published</SelectItem>
+                        <SelectItem value="PUBLISHED" disabled={!canPublish}>
+                          Published { !canPublish ? " (Superadmin only)" : "" }
+                        </SelectItem>
                       </SelectContent>
                     </Select>
+                    {!canPublish && (
+                      <FormDescription>
+                        Admin submissions remain draft until a superadmin approves them.
+                      </FormDescription>
+                    )}
                     <FormMessage />
                   </FormItem>
                 )}

@@ -4,6 +4,8 @@ import { createTRPCRouter, protectedProcedure, baseProcedure } from "@/trpc/init
 import prisma from "@/lib/db";
 import z from "zod";
 import { createSystemLog, LogAction, LogModule, createLogDescription } from "@/lib/system-log";
+import { TRPCError } from "@trpc/server";
+import { ADMIN_FEATURE_ACCESS, hasRequiredRole, normalizeRole } from "@/lib/rbac";
 
 const announcementSchema = z.object({
   id: z.string().optional(),
@@ -15,6 +17,17 @@ const announcementSchema = z.object({
   schedule: z.date().optional(),
   isPin: z.boolean().default(false),
   publication: z.enum(["PUBLISHED", "DRAFT"]).default("DRAFT"),
+});
+
+const adminAnnouncementsProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (!hasRequiredRole(ctx.auth.user.role, ADMIN_FEATURE_ACCESS.ANNOUNCEMENTS)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You do not have permission to manage announcements.",
+    });
+  }
+
+  return next();
 });
 
 export const announcementsRouter = createTRPCRouter({
@@ -47,7 +60,7 @@ export const announcementsRouter = createTRPCRouter({
       return announcements;
     }),
 
-  getOne: protectedProcedure
+  getOne: adminAnnouncementsProcedure
     .input(
       z.object({
         id: z.string(),
@@ -60,7 +73,7 @@ export const announcementsRouter = createTRPCRouter({
         },
       });
     }),
-  getMany: protectedProcedure
+  getMany: adminAnnouncementsProcedure
     .input(
       z
         .object({
@@ -113,13 +126,17 @@ export const announcementsRouter = createTRPCRouter({
         },
       };
     }),
-  create: protectedProcedure
+  create: adminAnnouncementsProcedure
     .input(announcementSchema)
     .mutation(async ({ input, ctx }) => {
       const { id, ...data } = input;
+      const userRole = normalizeRole(ctx.auth.user.role);
+      const canPublish = hasRequiredRole(userRole, ADMIN_FEATURE_ACCESS.ANNOUNCEMENTS_PUBLISH);
+
       const result = await prisma.announcement.create({
         data: {
           ...data,
+          publication: canPublish ? data.publication : "DRAFT",
         },
       });
 
@@ -140,7 +157,7 @@ export const announcementsRouter = createTRPCRouter({
 
       return result;
     }),
-  update: protectedProcedure
+  update: adminAnnouncementsProcedure
     .input(announcementSchema)
     .mutation(async ({ input, ctx }) => {
       if (!input.id) {
@@ -152,11 +169,17 @@ export const announcementsRouter = createTRPCRouter({
       });
 
       const { id, ...data } = input;
+      const userRole = normalizeRole(ctx.auth.user.role);
+      const canPublish = hasRequiredRole(userRole, ADMIN_FEATURE_ACCESS.ANNOUNCEMENTS_PUBLISH);
+
       const result = await prisma.announcement.update({
         where: {
           id: input.id,
         },
-        data,
+        data: {
+          ...data,
+          publication: canPublish ? data.publication : "DRAFT",
+        },
       });
 
       await createSystemLog({
@@ -174,7 +197,7 @@ export const announcementsRouter = createTRPCRouter({
 
       return result;
     }),
-  archive: protectedProcedure
+  archive: adminAnnouncementsProcedure
     .input(
       z.object({
         id: z.string(),

@@ -7,9 +7,10 @@ import { Loading } from "@/components/loading";
 import { requireAuth } from "@/lib/auth-utils";
 import { ContactDetails } from "./_components/contact-details";
 import { prefetch, trpc } from "@/trpc/server";
+import { Role } from "@prisma/client";
 
 const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
-  await requireAuth();
+  await requireAuth({ roles: [Role.SUPERADMIN] });
   const { id } = await params;
   await prefetch(trpc.contact.getOne.queryOptions({ id }));
 

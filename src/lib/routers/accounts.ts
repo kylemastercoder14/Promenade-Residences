@@ -8,9 +8,22 @@ import {
   LogModule,
   createLogDescription,
 } from "@/lib/system-log";
+import { TRPCError } from "@trpc/server";
+import { ADMIN_FEATURE_ACCESS, hasRequiredRole } from "@/lib/rbac";
+
+const accountsProcedure = protectedProcedure.use(({ ctx, next }) => {
+  if (!hasRequiredRole(ctx.auth.user.role, ADMIN_FEATURE_ACCESS.ACCOUNTS)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You do not have permission to manage accounts.",
+    });
+  }
+
+  return next();
+});
 
 export const accountsRouter = createTRPCRouter({
-  updateRole: protectedProcedure
+  updateRole: accountsProcedure
     .input(
       z.object({
         id: z.string(),
@@ -44,7 +57,7 @@ export const accountsRouter = createTRPCRouter({
 
       return result;
     }),
-  updateAccount: protectedProcedure
+  updateAccount: accountsProcedure
     .input(
       z.object({
         id: z.string(),
@@ -89,7 +102,7 @@ export const accountsRouter = createTRPCRouter({
 
       return result;
     }),
-  archiveOrRetrieve: protectedProcedure
+  archiveOrRetrieve: accountsProcedure
     .input(
       z.object({
         id: z.string(),
@@ -118,7 +131,7 @@ export const accountsRouter = createTRPCRouter({
 
       return result;
     }),
-  getOne: protectedProcedure
+  getOne: accountsProcedure
     .input(
       z.object({
         id: z.string(),
@@ -131,7 +144,7 @@ export const accountsRouter = createTRPCRouter({
         },
       });
     }),
-  getMany: protectedProcedure.query(() => {
+  getMany: accountsProcedure.query(() => {
     return prisma.user.findMany({
       orderBy: { createdAt: "desc" },
     });

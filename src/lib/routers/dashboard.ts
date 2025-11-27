@@ -72,15 +72,16 @@ export const dashboardRouter = createTRPCRouter({
     });
 
     const totalMonthlyDues = monthlyDuesThisMonth.length;
-    const paidMonthlyDues = monthlyDuesThisMonth.filter(
-      (due) => due.amountPaid >= 750
+    const approvedMonthlyDues = monthlyDuesThisMonth.filter(
+      (due) => due.status === "APPROVED"
     ).length;
-    const pendingMonthlyDues = totalMonthlyDues - paidMonthlyDues;
+    const pendingMonthlyDues = totalMonthlyDues - approvedMonthlyDues;
 
     // Get all monthly dues for current year for revenue calculation (to match collection chart)
     const monthlyDuesThisYear = await prisma.monthlyDue.findMany({
       where: {
         year: currentYear,
+        status: "APPROVED",
       },
     });
 
@@ -159,6 +160,7 @@ export const dashboardRouter = createTRPCRouter({
     const reservationsRevenue = await prisma.amenityReservation.aggregate({
       where: {
         isArchived: false,
+        status: "APPROVED",
         paymentStatus: "PAID",
       },
       _sum: {
@@ -199,7 +201,7 @@ export const dashboardRouter = createTRPCRouter({
       },
       monthlyDues: {
         total: totalMonthlyDues,
-        paid: paidMonthlyDues,
+        paid: approvedMonthlyDues,
         pending: pendingMonthlyDues,
         revenue: monthlyDuesRevenue,
       },

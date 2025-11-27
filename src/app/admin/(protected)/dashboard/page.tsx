@@ -50,7 +50,7 @@ const Page = () => {
       {
         title: "Monthly Dues",
         value: `${stats.monthlyDues.paid} / ${stats.monthlyDues.total}`,
-        details: `${stats.monthlyDues.paid} Paid • ${stats.monthlyDues.pending} Pending`,
+        details: `${stats.monthlyDues.paid} Approved • ${stats.monthlyDues.pending} Pending`,
         icon: IconCalendarCheck,
       },
       {
@@ -92,28 +92,35 @@ const Page = () => {
     // Add recent monthly dues
     stats.recentMonthlyDues.forEach((due) => {
       const residentName = `${due.resident.firstName} ${due.resident.lastName}`;
+      const dueStatus =
+        due.status === "APPROVED"
+          ? ("Completed" as const)
+          : due.status === "REJECTED"
+            ? ("Rejected" as const)
+            : ("Pending" as const);
       transactions.push({
         date: format(new Date(due.createdAt), "MMM. d, yyyy"),
         type: "Monthly Due",
         resident: residentName,
         amount: `₱${due.amountPaid.toLocaleString()}`,
-        status: due.amountPaid >= 750 ? ("Completed" as const) : ("Pending" as const),
+        status: dueStatus,
       });
     });
 
     // Add recent reservations
     stats.recentReservations.forEach((reservation) => {
+      const reservationStatus =
+        reservation.status === "APPROVED" && reservation.paymentStatus === "PAID"
+          ? ("Completed" as const)
+          : reservation.status === "REJECTED" || reservation.status === "CANCELLED"
+            ? ("Rejected" as const)
+            : ("Pending" as const);
       transactions.push({
         date: format(new Date(reservation.date), "MMM. d, yyyy"),
         type: "Amenity Reservation",
         resident: reservation.fullName,
         amount: `₱${reservation.amountPaid.toLocaleString()}`,
-        status:
-          reservation.paymentStatus === "PAID"
-            ? ("Completed" as const)
-            : reservation.status === "REJECTED" || reservation.status === "CANCELLED"
-            ? ("Rejected" as const)
-            : ("Pending" as const),
+        status: reservationStatus,
       });
     });
 

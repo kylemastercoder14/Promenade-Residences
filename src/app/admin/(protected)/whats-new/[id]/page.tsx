@@ -5,6 +5,7 @@ import { Error } from "@/components/error";
 import { Loading } from "@/components/loading";
 import { Suspense } from "react";
 import { Client } from "./_components/client";
+import { Role } from "@prisma/client";
 
 interface PageProps {
   params: Promise<{
@@ -13,7 +14,8 @@ interface PageProps {
 }
 
 const Page = async ({ params }: PageProps) => {
-  await requireAuth();
+  const session = await requireAuth({ roles: [Role.SUPERADMIN, Role.ADMIN] });
+  const userRole = (session.user.role as Role) ?? Role.USER;
   const { id } = await params;
 
   return (
@@ -24,7 +26,7 @@ const Page = async ({ params }: PageProps) => {
         }
       >
         <Suspense fallback={<Loading message="Loading..." />}>
-          <Client id={id} />
+          <Client id={id} canPublish={userRole === Role.SUPERADMIN} />
         </Suspense>
       </ErrorBoundary>
     </HydrateClient>

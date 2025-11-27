@@ -14,7 +14,7 @@ import { ADMIN_FEATURE_ACCESS, hasRequiredRole } from "@/lib/rbac";
 const MONTHLY_DUE_AMOUNT = 750;
 
 const accountingProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (!hasRequiredRole(ctx.auth.user.role, ADMIN_FEATURE_ACCESS.TRANSACTIONS)) {
+  if (!hasRequiredRole(ctx.auth.user.role, [...ADMIN_FEATURE_ACCESS.TRANSACTIONS])) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "You do not have permission to approve monthly dues.",

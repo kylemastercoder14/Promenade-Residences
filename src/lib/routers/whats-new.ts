@@ -242,7 +242,10 @@ export const whatsNewRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const { id, ...data } = input;
       const userRole = normalizeRole(ctx.auth.user.role);
-      const canPublish = hasRequiredRole(userRole, ADMIN_FEATURE_ACCESS.WHATS_NEW_PUBLISH);
+      const canPublish = hasRequiredRole(
+        userRole,
+        [...ADMIN_FEATURE_ACCESS.WHATS_NEW_PUBLISH]
+      );
 
       const result = await prisma.whatsNew.create({
         data: {
@@ -283,7 +286,10 @@ export const whatsNewRouter = createTRPCRouter({
 
       const { id, ...data } = input;
       const userRole = normalizeRole(ctx.auth.user.role);
-      const canPublish = hasRequiredRole(userRole, ADMIN_FEATURE_ACCESS.WHATS_NEW_PUBLISH);
+      const canPublish = hasRequiredRole(
+        userRole,
+        [...ADMIN_FEATURE_ACCESS.WHATS_NEW_PUBLISH]
+      );
 
       const result = await prisma.whatsNew.update({
         where: {

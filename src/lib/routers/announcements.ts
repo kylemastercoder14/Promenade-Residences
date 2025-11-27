@@ -20,7 +20,7 @@ const announcementSchema = z.object({
 });
 
 const adminAnnouncementsProcedure = protectedProcedure.use(({ ctx, next }) => {
-  if (!hasRequiredRole(ctx.auth.user.role, ADMIN_FEATURE_ACCESS.ANNOUNCEMENTS)) {
+  if (!hasRequiredRole(ctx.auth.user.role, [...ADMIN_FEATURE_ACCESS.ANNOUNCEMENTS])) {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "You do not have permission to manage announcements.",
@@ -131,7 +131,10 @@ export const announcementsRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const { id, ...data } = input;
       const userRole = normalizeRole(ctx.auth.user.role);
-      const canPublish = hasRequiredRole(userRole, ADMIN_FEATURE_ACCESS.ANNOUNCEMENTS_PUBLISH);
+      const canPublish = hasRequiredRole(
+        userRole,
+        [...ADMIN_FEATURE_ACCESS.ANNOUNCEMENTS_PUBLISH]
+      );
 
       const result = await prisma.announcement.create({
         data: {
@@ -170,7 +173,10 @@ export const announcementsRouter = createTRPCRouter({
 
       const { id, ...data } = input;
       const userRole = normalizeRole(ctx.auth.user.role);
-      const canPublish = hasRequiredRole(userRole, ADMIN_FEATURE_ACCESS.ANNOUNCEMENTS_PUBLISH);
+      const canPublish = hasRequiredRole(
+        userRole,
+        [...ADMIN_FEATURE_ACCESS.ANNOUNCEMENTS_PUBLISH]
+      );
 
       const result = await prisma.announcement.update({
         where: {

@@ -31,7 +31,7 @@ const officeInfo = [
   {
     icon: MapPin,
     label: "Address",
-    value: "Lot 12, The Promenade Residences, Dasmariñas, Cavite",
+    value: "Beverly Hills Boulevard, Salawag, Dasmariñas, Cavite",
   },
   {
     icon: Clock,

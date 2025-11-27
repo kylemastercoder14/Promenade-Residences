@@ -238,7 +238,7 @@ export const whatsNewRouter = createTRPCRouter({
       await createSystemLog({
         userId: ctx.auth.user.id,
         action: LogAction.CREATE,
-        module: LogModule.WHATS_NEW,
+        module: LogModule.ANNOUNCEMENTS,
         entityId: result.id,
         entityType: "WhatsNew",
         description: createLogDescription(
@@ -278,7 +278,7 @@ export const whatsNewRouter = createTRPCRouter({
       await createSystemLog({
         userId: ctx.auth.user.id,
         action: LogAction.UPDATE,
-        module: LogModule.WHATS_NEW,
+        module: LogModule.ANNOUNCEMENTS,
         entityId: result.id,
         entityType: "WhatsNew",
         description: createLogDescription(
@@ -314,7 +314,7 @@ export const whatsNewRouter = createTRPCRouter({
       await createSystemLog({
         userId: ctx.auth.user.id,
         action: input.isArchived ? LogAction.ARCHIVE : LogAction.RETRIEVE,
-        module: LogModule.WHATS_NEW,
+        module: LogModule.ANNOUNCEMENTS,
         entityId: input.id,
         entityType: "WhatsNew",
         description: createLogDescription(

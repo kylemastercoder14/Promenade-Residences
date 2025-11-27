@@ -1,34 +1,8 @@
 import prisma from "@/lib/db";
 import { headers } from "next/headers";
+import { LogModule, LogAction } from "@prisma/client";
 
-export enum LogAction {
-  CREATE = "CREATE",
-  UPDATE = "UPDATE",
-  DELETE = "DELETE",
-  ARCHIVE = "ARCHIVE",
-  RETRIEVE = "RETRIEVE",
-  LOGIN = "LOGIN",
-  LOGOUT = "LOGOUT",
-  PASSWORD_CHANGE = "PASSWORD_CHANGE",
-  PROFILE_UPDATE = "PROFILE_UPDATE",
-  STATUS_CHANGE = "STATUS_CHANGE",
-  PAYMENT_CREATE = "PAYMENT_CREATE",
-  PAYMENT_UPDATE = "PAYMENT_UPDATE",
-  PAYMENT_DELETE = "PAYMENT_DELETE",
-}
-
-export enum LogModule {
-  ACCOUNTS = "ACCOUNTS",
-  RESIDENTS = "RESIDENTS",
-  VEHICLE_REGISTRATIONS = "VEHICLE_REGISTRATIONS",
-  ANNOUNCEMENTS = "ANNOUNCEMENTS",
-  AMENITY_RESERVATIONS = "AMENITY_RESERVATIONS",
-  MAPS = "MAPS",
-  MONTHLY_DUES = "MONTHLY_DUES",
-  SETTINGS = "SETTINGS",
-  AUTH = "AUTH",
-  WHATS_NEW = "WHATS_NEW",
-}
+export { LogAction, LogModule };
 
 type JsonValue =
   | string

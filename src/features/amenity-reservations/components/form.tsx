@@ -34,20 +34,24 @@ import {
 } from "@/features/amenity-reservations/hooks/use-amenity-reservations";
 import { useTRPC } from "@/trpc/client";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { AmenityReservation } from "@prisma/client";
+import { AmenityReservation, PaymentMethod } from "@prisma/client";
+import ImageUpload from "@/components/image-upload";
+import { FormDescription } from "@/components/ui/form";
 
 const formSchema = z
   .object({
     userType: z.enum(["resident", "tenant", "visitor"]),
     userId: z.string().optional(),
     fullName: z.string().min(1, "Full name is required"),
+    email: z.string().email("Invalid email address").optional().or(z.literal("")),
     amenity: z.enum(["COURT", "GAZEBO"]),
     date: z.date(),
     startTime: z.string().min(1, "Start time is required"),
     endTime: z.string().min(1, "End time is required"),
     numberOfGuests: z.number().min(1, "Number of guests is required"),
     purpose: z.string().optional(),
-    paymentMethod: z.string().min(1, "Payment method is required"),
+    paymentMethod: z.nativeEnum(PaymentMethod).optional(),
+    proofOfPayment: z.string().optional(),
     isWalkIn: z.boolean(),
   })
   .refine(
@@ -60,6 +64,32 @@ const formSchema = z
     {
       message: "User selection is required for residents and tenants",
       path: ["userId"],
+    }
+  )
+  .refine(
+    (data) => {
+      // If payment method is not CASH, proof of payment is required
+      if (data.paymentMethod && data.paymentMethod !== PaymentMethod.CASH && !data.proofOfPayment) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Proof of payment is required for non-cash payment methods",
+      path: ["proofOfPayment"],
+    }
+  )
+  .refine(
+    (data) => {
+      // Email is required for visitors
+      if (data.userType === "visitor" && !data.email) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Email is required for visitors",
+      path: ["email"],
     }
   );
 
@@ -102,13 +132,15 @@ export const ReservationForm = ({
       userType: initialData ? mapUserType(initialData.userType) : "visitor",
       userId: initialData?.userId || undefined,
       fullName: initialData?.fullName || "",
+      email: initialData?.email || "",
       amenity: initialData ? mapAmenity(initialData.amenity) : "COURT",
       date: initialData ? new Date(initialData.date) : new Date(),
       startTime: initialData?.startTime || "",
       endTime: initialData?.endTime || "",
       numberOfGuests: initialData?.numberOfGuests || 1,
       purpose: initialData?.purpose || "",
-      paymentMethod: initialData?.paymentMethod || "",
+      paymentMethod: initialData?.paymentMethod || undefined,
+      proofOfPayment: initialData?.proofOfPayment || "",
       isWalkIn: false,
     },
   });
@@ -181,11 +213,12 @@ export const ReservationForm = ({
     return 0;
   }, [amenity, startTime, endTime]);
 
-  // Auto-fill full name when user is selected
+  // Auto-fill full name and email when user is selected
   const handleUserChange = (userId: string) => {
     const selected = filteredResidentsWithUsers.find((item) => item.userId === userId);
     if (selected) {
       form.setValue("fullName", selected.fullName);
+      form.setValue("email", selected.email || "");
       form.setValue("userId", userId);
     }
   };
@@ -199,6 +232,7 @@ export const ReservationForm = ({
           userType: data.userType,
           userId: data.userId,
           fullName: data.fullName,
+          email: data.email,
           amenity: data.amenity,
           date: data.date,
           startTime: data.startTime,
@@ -206,6 +240,7 @@ export const ReservationForm = ({
           numberOfGuests: data.numberOfGuests,
           purpose: data.purpose,
           paymentMethod: data.paymentMethod,
+          proofOfPayment: data.proofOfPayment,
           amountToPay: calculatedAmount,
           amountPaid: initialData.amountPaid,
           status: initialData.status.toLowerCase() as "pending" | "approved" | "rejected" | "cancelled",
@@ -218,6 +253,7 @@ export const ReservationForm = ({
           userType: data.userType,
           userId: data.userId,
           fullName: data.fullName,
+          email: data.email,
           amenity: data.amenity,
           date: data.date,
           startTime: data.startTime,
@@ -225,6 +261,7 @@ export const ReservationForm = ({
           numberOfGuests: data.numberOfGuests,
           purpose: data.purpose,
           paymentMethod: data.paymentMethod,
+          proofOfPayment: data.proofOfPayment,
           amountToPay: calculatedAmount,
           amountPaid: calculatedAmount,
           status: "approved",
@@ -240,6 +277,7 @@ export const ReservationForm = ({
           userType: data.userType,
           userId: data.userId,
           fullName: data.fullName,
+          email: data.email,
           amenity: data.amenity,
           date: data.date,
           startTime: data.startTime,
@@ -247,6 +285,7 @@ export const ReservationForm = ({
           numberOfGuests: data.numberOfGuests,
           purpose: data.purpose,
           paymentMethod: data.paymentMethod,
+          proofOfPayment: data.proofOfPayment,
           amountToPay: calculatedAmount,
           amountPaid: 0,
           status: "pending",
@@ -395,6 +434,33 @@ export const ReservationForm = ({
 
               <FormField
                 control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Email Address{" "}
+                      {userType === "visitor" && (
+                        <span className="text-destructive">*</span>
+                      )}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        disabled={
+                          isSubmitting ||
+                          Boolean(userType !== "visitor" && form.watch("userId"))
+                        }
+                        placeholder="name@example.com"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="amenity"
                 render={({ field }) => (
                   <FormItem>
@@ -505,35 +571,76 @@ export const ReservationForm = ({
               />
             </div>
 
-            <FormField
-              control={form.control}
-              name="paymentMethod"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Payment Method <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select payment method" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="gcash">GCash</SelectItem>
-                      <SelectItem value="bank transfer">
-                        Bank Transfer
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid lg:grid-cols-2 grid-cols-1 gap-6">
+              <FormField
+                control={form.control}
+                name="paymentMethod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Payment Method{" "}
+                      {form.watch("paymentMethod") !== PaymentMethod.CASH && (
+                        <span className="text-destructive">*</span>
+                      )}
+                    </FormLabel>
+                    <Select
+                      onValueChange={(value) =>
+                        field.onChange(value as PaymentMethod)
+                      }
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select payment method" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={PaymentMethod.CASH}>Cash</SelectItem>
+                        <SelectItem value={PaymentMethod.GCASH}>GCash</SelectItem>
+                        <SelectItem value={PaymentMethod.MAYA}>Maya</SelectItem>
+                        <SelectItem value={PaymentMethod.OTHER_BANK}>
+                          Bank Transfer
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {form.watch("paymentMethod") &&
+                form.watch("paymentMethod") !== PaymentMethod.CASH && (
+                  <FormField
+                    control={form.control}
+                    name="proofOfPayment"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Proof of Payment{" "}
+                          <span className="text-destructive">*</span>
+                        </FormLabel>
+                        <FormControl>
+                          <ImageUpload
+                            imageCount={1}
+                            maxSize={5}
+                            onImageUpload={(url) =>
+                              field.onChange(
+                                typeof url === "string" ? url : url[0]
+                              )
+                            }
+                            defaultValue={field.value}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Upload proof of payment (e.g., screenshot, deposit
+                          slip)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
+            </div>
 
             <FormField
               control={form.control}

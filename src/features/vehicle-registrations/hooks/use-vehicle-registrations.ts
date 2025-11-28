@@ -47,6 +47,31 @@ export const useCreateVehicleRegistration = () => {
   );
 };
 
+export const useCreateVehicleRegistrationForResident = () => {
+  const queryClient = useQueryClient();
+  const trpc = useTRPC();
+
+  return useMutation(
+    trpc.vehicleRegistrations.createForResident.mutationOptions({
+      onSuccess: (data) => {
+        queryClient.invalidateQueries(
+          trpc.vehicleRegistrations.getMany.queryOptions()
+        );
+        queryClient.invalidateQueries(
+          trpc.vehicleRegistrations.getOne.queryOptions({ id: data.id })
+        );
+        queryClient.invalidateQueries(
+          trpc.vehicleRegistrations.getMyVehicles.queryOptions()
+        );
+        toast.success("Vehicle registration submitted successfully!");
+      },
+      onError: (error) => {
+        toast.error(`Failed to create vehicle registration: ${error.message}`);
+      },
+    })
+  );
+};
+
 export const useUpdateVehicleRegistration = () => {
   const queryClient = useQueryClient();
   const trpc = useTRPC();

@@ -19,7 +19,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
 import ImageUpload from "@/components/image-upload";
-import { useCreateVehicleRegistration } from "@/features/vehicle-registrations/hooks/use-vehicle-registrations";
+import { useCreateVehicleRegistrationForResident } from "@/features/vehicle-registrations/hooks/use-vehicle-registrations";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -43,7 +43,18 @@ const formSchema = z.object({
   relationshipToVehicle: z.enum(["OWNER", "FAMILY_MEMBER", "COMPANY_DRIVER"]),
   orAttachment: z.string().optional(),
   crAttachment: z.string().optional(),
+  paymentMethod: z.enum(["CASH", "GCASH", "MAYA", "OTHER_BANK"]).optional(),
+  proofOfPayment: z.string().optional(),
   residentId: z.string().optional(),
+}).refine((data) => {
+  // If payment method is not CASH, proof of payment is required
+  if (data.paymentMethod && data.paymentMethod !== "CASH" && !data.proofOfPayment) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Proof of payment is required for non-cash payment methods",
+  path: ["proofOfPayment"],
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -54,7 +65,7 @@ type Step = (typeof steps)[number];
 export const MultiStepVehicleForm = () => {
   const router = useRouter();
   const [step, setStep] = useState<Step>("vehicle");
-  const createVehicleRegistration = useCreateVehicleRegistration();
+  const createVehicleRegistration = useCreateVehicleRegistrationForResident();
   const trpc = useTRPC();
 
   // Fetch household members for dropdown
@@ -78,6 +89,8 @@ export const MultiStepVehicleForm = () => {
       relationshipToVehicle: "OWNER",
       orAttachment: undefined,
       crAttachment: undefined,
+      paymentMethod: undefined,
+      proofOfPayment: undefined,
       residentId: undefined,
     },
   });
@@ -371,7 +384,7 @@ export const MultiStepVehicleForm = () => {
               </div>
               <div>
                 <Label className="text-sm font-semibold text-[#1a2c1f]">
-                  Relationship to Vehicle
+                  Relationship to Owner
                 </Label>
                 <Select
                   onValueChange={(value) => form.setValue("relationshipToVehicle", value as FormData["relationshipToVehicle"])}
@@ -446,6 +459,55 @@ export const MultiStepVehicleForm = () => {
                     defaultValue={form.watch("crAttachment")}
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="grid gap-3">
+              <div>
+                <Label className="text-sm font-semibold text-[#1a2c1f]">
+                  Payment Method
+                </Label>
+                <Select
+                  onValueChange={(value) => form.setValue("paymentMethod", value as FormData["paymentMethod"])}
+                  value={form.watch("paymentMethod")}
+                >
+                  <SelectTrigger className="mt-1 w-full bg-[#f6f8f5]">
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="CASH">Cash</SelectItem>
+                    <SelectItem value="GCASH">GCash</SelectItem>
+                    <SelectItem value="OTHER_BANK">Bank Transfer</SelectItem>
+                  </SelectContent>
+                </Select>
+                {form.formState.errors.paymentMethod && (
+                  <p className="text-sm text-destructive mt-1">
+                    {form.formState.errors.paymentMethod.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label className="text-sm font-semibold text-[#1a2c1f]">
+                  Proof of Payment{" "}
+                  {form.watch("paymentMethod") && form.watch("paymentMethod") !== "CASH" && (
+                    <span className="text-destructive">*</span>
+                  )}
+                </Label>
+                <div className="mt-1">
+                  <ImageUpload
+                    imageCount={1}
+                    maxSize={5}
+                    onImageUpload={(url) =>
+                      form.setValue("proofOfPayment", typeof url === "string" ? url : url[0])
+                    }
+                    defaultValue={form.watch("proofOfPayment")}
+                  />
+                </div>
+                {form.formState.errors.proofOfPayment && (
+                  <p className="text-sm text-destructive mt-1">
+                    {form.formState.errors.proofOfPayment.message}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -553,6 +615,14 @@ export const MultiStepVehicleForm = () => {
                         </p>
                       ) : null;
                     })()}
+                    {form.watch("paymentMethod") && (
+                      <p>
+                        <span className="text-[#6b766d]">Payment Method:</span>{" "}
+                        <span className="font-semibold">
+                          {form.watch("paymentMethod") === "CASH" ? "Cash" : form.watch("paymentMethod") === "GCASH" ? "GCash" : "Bank Transfer"}
+                        </span>
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

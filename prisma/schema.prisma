@@ -130,18 +130,20 @@ model AmenityReservation {
   userId        String?
   user          User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
   fullName      String
+  email         String?
   amenity       AmenityType
   date          DateTime
   startTime     String
   endTime       String
   numberOfGuests Int
   purpose       String?
-  paymentMethod String
+  paymentMethod PaymentMethod?
   amountToPay   Float
   amountPaid    Float              @default(0)
   status        ReservationStatus  @default(PENDING)
   paymentStatus PaymentStatus      @default(PENDING)
   receiptUrl    String?
+  proofOfPayment String?
   isArchived    Boolean            @default(false)
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @default(now()) @updatedAt
@@ -206,6 +208,8 @@ model VehicleRegistration {
   relationshipToVehicle RelationshipToVehicle
   orAttachment        String?
   crAttachment        String?
+  paymentMethod       PaymentMethod?
+  proofOfPayment      String?
   residentId          String?
   resident            Resident?              @relation(fields: [residentId], references: [id], onDelete: SetNull)
   isArchived          Boolean                 @default(false)

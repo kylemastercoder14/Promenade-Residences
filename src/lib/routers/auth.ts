@@ -536,10 +536,20 @@ export const authRouter = createTRPCRouter({
     }
 
     // Get amenity reservations
+    // Include reservations by userId OR by email (for residents/tenants) OR by email (for visitors)
+    // Include all statuses including PENDING
     const amenityReservations = await prisma.amenityReservation.findMany({
       where: {
-        userId: userId,
+        OR: [
+          { userId: userId },
+          ...(userEmail ? [{ email: userEmail }] : []),
+          // Also check if user is a resident and match by their email
+          ...(headResident?.emailAddress
+            ? [{ email: headResident.emailAddress }]
+            : []),
+        ],
         isArchived: false,
+        // Include all statuses - no status filter to show pending reservations
       },
       orderBy: {
         createdAt: "desc",
@@ -552,12 +562,27 @@ export const authRouter = createTRPCRouter({
         GAZEBO: "Gazebo",
         PARKING_AREA: "Parking Area",
       };
+
+      // Determine the status to display - use paymentStatus if available, otherwise use status
+      let displayStatus = reservation.status;
+      if (reservation.paymentStatus === "PAID" && reservation.status === "APPROVED") {
+        displayStatus = "PAID";
+      } else if (reservation.paymentStatus === "PENDING" && reservation.status === "PENDING") {
+        displayStatus = "PENDING";
+      } else if (reservation.status === "APPROVED" && reservation.paymentStatus === "PENDING") {
+        displayStatus = "APPROVED";
+      } else if (reservation.status === "REJECTED") {
+        displayStatus = "REJECTED";
+      } else if (reservation.status === "CANCELLED") {
+        displayStatus = "CANCELLED";
+      }
+
       transactions.push({
         id: reservation.id,
         type: "AMENITY_RESERVATION",
         date: reservation.createdAt,
-        amount: reservation.amountPaid,
-        status: reservation.status,
+        amount: reservation.amountPaid || reservation.amountToPay,
+        status: displayStatus,
         description: `Amenity Reservation - ${amenityLabels[reservation.amenity] || reservation.amenity}`,
         metadata: {
           amenity: reservation.amenity,
@@ -566,6 +591,7 @@ export const authRouter = createTRPCRouter({
           endTime: reservation.endTime,
           fullName: reservation.fullName,
           paymentStatus: reservation.paymentStatus,
+          reservationStatus: reservation.status,
         },
       });
     }

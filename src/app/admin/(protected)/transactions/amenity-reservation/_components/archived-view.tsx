@@ -39,6 +39,7 @@ import {
   ArchiveRestore,
   WalletIcon,
   FileTextIcon,
+  Eye,
 } from "lucide-react";
 import { ReservationForm } from "@/features/amenity-reservations/components/form";
 import {

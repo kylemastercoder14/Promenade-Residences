@@ -29,19 +29,22 @@ import { ResidentReservationCalendar } from "./resident-calendar";
 import {
   CalendarDate,
 } from "@internationalized/date";
+import ImageUpload from "@/components/image-upload";
 
 const formSchema = z
   .object({
     userType: z.enum(["resident", "tenant", "visitor"]),
     userId: z.string().optional(),
     fullName: z.string().min(1, "Full name is required"),
+    email: z.string().email("Invalid email address").optional().or(z.literal("")),
     amenity: z.enum(["COURT", "GAZEBO"]),
     date: z.date(),
     startTime: z.string().min(1, "Start time is required"),
     endTime: z.string().min(1, "End time is required"),
     numberOfGuests: z.number().min(1, "Number of guests is required"),
     purpose: z.string().optional(),
-    paymentMethod: z.string().min(1, "Payment method is required"),
+    paymentMethod: z.enum(["CASH", "GCASH", "MAYA", "OTHER_BANK"]).optional(),
+    proofOfPayment: z.string().optional(),
   })
   .refine(
     (data) => {
@@ -56,7 +59,30 @@ const formSchema = z
       message: "Please select a household member or enter a name",
       path: ["fullName"],
     }
-  );
+  )
+  .refine(
+    (data) => {
+      // Email is required for visitors
+      if (data.userType === "visitor") {
+        return !!data.email && data.email.trim() !== "";
+      }
+      return true;
+    },
+    {
+      message: "Email is required for visitors",
+      path: ["email"],
+    }
+  )
+  .refine((data) => {
+    // If payment method is not CASH, proof of payment is required
+    if (data.paymentMethod && data.paymentMethod !== "CASH" && !data.proofOfPayment) {
+      return false;
+    }
+    return true;
+  }, {
+    message: "Proof of payment is required for non-cash payment methods",
+    path: ["proofOfPayment"],
+  });
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -83,13 +109,15 @@ export const ResidentReservationForm = () => {
       userType: "resident",
       userId: undefined,
       fullName: "",
+      email: "",
       amenity: "COURT",
       date: new Date(),
       startTime: "",
       endTime: "",
       numberOfGuests: 1,
       purpose: "",
-      paymentMethod: "",
+      paymentMethod: undefined,
+      proofOfPayment: undefined,
     },
   });
 
@@ -184,7 +212,7 @@ export const ResidentReservationForm = () => {
     return 0;
   }, [amenity, startTime, endTime]);
 
-  // Auto-fill full name when user is selected
+  // Auto-fill full name and email when user is selected
   const handleUserChange = (value: string) => {
     // value can be either userId or residentId (if no user exists)
     const selected = filteredResidentsWithUsers.find(
@@ -193,6 +221,10 @@ export const ResidentReservationForm = () => {
     );
     if (selected) {
       form.setValue("fullName", selected.fullName);
+      // Auto-populate email from resident's email address
+      if (selected.email) {
+        form.setValue("email", selected.email);
+      }
       // Only set userId if a user exists, otherwise leave it undefined
       if (selected.userId) {
         form.setValue("userId", selected.userId);
@@ -208,6 +240,7 @@ export const ResidentReservationForm = () => {
         userType: data.userType,
         userId: data.userId,
         fullName: data.fullName,
+        email: data.email,
         amenity: data.amenity,
         date: data.date,
         startTime: data.startTime,
@@ -215,6 +248,7 @@ export const ResidentReservationForm = () => {
         numberOfGuests: data.numberOfGuests,
         purpose: data.purpose,
         paymentMethod: data.paymentMethod,
+        proofOfPayment: data.proofOfPayment,
         amountToPay: calculatedAmount,
         amountPaid: 0,
         status: "pending",
@@ -236,6 +270,7 @@ export const ResidentReservationForm = () => {
     if (step === "person") {
       // For residents/tenants, we need fullName and either userId or a selected resident
       const fullName = form.getValues("fullName");
+      const email = form.getValues("email");
       const userId = form.getValues("userId");
       const selectedResident = filteredResidentsWithUsers.find(
         (item) => item.fullName === fullName
@@ -244,6 +279,11 @@ export const ResidentReservationForm = () => {
       if (userType === "visitor") {
         if (!fullName) {
           form.trigger("fullName");
+          return;
+        }
+        // Email is required for visitors
+        if (!email || email.trim() === "") {
+          form.trigger("email");
           return;
         }
       } else {
@@ -266,7 +306,6 @@ export const ResidentReservationForm = () => {
         "startTime",
         "endTime",
         "numberOfGuests",
-        "paymentMethod",
       ] as const;
       const isValid = amenityFields.every((field) => {
         const value = form.getValues(field);
@@ -339,6 +378,7 @@ export const ResidentReservationForm = () => {
                 form.setValue("userType", value as FormData["userType"]);
                 form.setValue("userId", undefined);
                 form.setValue("fullName", "");
+                form.setValue("email", "");
               }}
               className="mt-4 grid gap-3 md:grid-cols-2"
             >
@@ -438,6 +478,26 @@ export const ResidentReservationForm = () => {
               {form.formState.errors.fullName && (
                 <p className="text-sm text-destructive mt-1">
                   {form.formState.errors.fullName.message}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <Label className="text-sm font-semibold text-[#1a2c1f]">
+                Email Address{" "}
+                {userType === "visitor" && <span className="text-destructive">*</span>}
+                {userType !== "visitor" && <span className="text-muted-foreground">(optional)</span>}
+              </Label>
+              <Input
+                type="email"
+                placeholder="Enter email address"
+                className="mt-1 bg-[#f5f8f3]"
+                disabled={userType !== "visitor" && !!form.watch("userId")}
+                {...form.register("email")}
+              />
+              {form.formState.errors.email && (
+                <p className="text-sm text-destructive mt-1">
+                  {form.formState.errors.email.message}
                 </p>
               )}
             </div>
@@ -573,21 +633,22 @@ export const ResidentReservationForm = () => {
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               <div>
                 <Label className="text-sm font-semibold text-[#1a2c1f]">
-                  Payment Method <span className="text-destructive">*</span>
+                  Payment Method{" "}
+                  <span className="text-muted-foreground">(optional)</span>
                 </Label>
                 <Select
                   onValueChange={(value) =>
-                    form.setValue("paymentMethod", value)
+                    form.setValue("paymentMethod", value as FormData["paymentMethod"])
                   }
                   value={form.watch("paymentMethod")}
                 >
                   <SelectTrigger className="mt-1 w-full bg-[#f5f8f3]">
-                    <SelectValue placeholder="Select method" />
+                    <SelectValue placeholder="Select payment method" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="cash">Cash</SelectItem>
-                    <SelectItem value="gcash">GCash</SelectItem>
-                    <SelectItem value="bank transfer">Bank Transfer</SelectItem>
+                    <SelectItem value="CASH">Cash</SelectItem>
+                    <SelectItem value="GCASH">GCash</SelectItem>
+                    <SelectItem value="OTHER_BANK">Bank Transfer</SelectItem>
                   </SelectContent>
                 </Select>
                 {form.formState.errors.paymentMethod && (
@@ -612,6 +673,39 @@ export const ResidentReservationForm = () => {
                     : "100 pesos per hour"}
                 </p>
               </div>
+            </div>
+
+            <div className="mt-3">
+              <Label className="text-sm font-semibold text-[#1a2c1f]">
+                Proof of Payment{" "}
+                {form.watch("paymentMethod") && form.watch("paymentMethod") !== "CASH" ? (
+                  <span className="text-destructive">*</span>
+                ) : (
+                  <span className="text-muted-foreground">(optional)</span>
+                )}
+              </Label>
+              <div className="mt-1">
+                <ImageUpload
+                  imageCount={1}
+                  maxSize={5}
+                  onImageUpload={(url) =>
+                    form.setValue("proofOfPayment", typeof url === "string" ? url : url[0])
+                  }
+                  defaultValue={form.watch("proofOfPayment")}
+                />
+              </div>
+              {form.formState.errors.proofOfPayment && (
+                <p className="text-sm text-destructive mt-1">
+                  {form.formState.errors.proofOfPayment.message}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                {!form.watch("paymentMethod")
+                  ? "Select a payment method first. Proof of payment is required for non-cash payments."
+                  : form.watch("paymentMethod") !== "CASH"
+                    ? "Proof of payment is required for non-cash payments"
+                    : "Upload proof of payment (optional for cash payments)"}
+              </p>
             </div>
 
             <div>
@@ -708,12 +802,35 @@ export const ResidentReservationForm = () => {
                         ₱{calculatedAmount.toLocaleString()}
                       </span>
                     </p>
-                    <p>
-                      <span className="text-[#6b766d]">Method:</span>{" "}
-                      <span className="font-semibold capitalize">
-                        {form.watch("paymentMethod")}
-                      </span>
-                    </p>
+                    {form.watch("paymentMethod") && (
+                      <p>
+                        <span className="text-[#6b766d]">Payment Method:</span>{" "}
+                        <span className="font-semibold">
+                          {form.watch("paymentMethod") === "CASH" ? "Cash" : form.watch("paymentMethod") === "GCASH" ? "GCash" : "Bank Transfer"}
+                        </span>
+                      </p>
+                    )}
+                    {form.watch("proofOfPayment") && (
+                      <p>
+                        <span className="text-[#6b766d]">Proof of Payment:</span>{" "}
+                        <a
+                          href={form.watch("proofOfPayment")}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary font-semibold hover:underline"
+                        >
+                          View Document
+                        </a>
+                      </p>
+                    )}
+                    {form.watch("email") && (
+                      <p>
+                        <span className="text-[#6b766d]">Email:</span>{" "}
+                        <span className="font-semibold">
+                          {form.watch("email")}
+                        </span>
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

@@ -5,7 +5,8 @@ import { LandingFooter } from "@/components/landing/footer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Plus, Minus, RefreshCcw, Info } from "lucide-react";
+import { Info } from "lucide-react";
+import { InteractiveMap } from "@/components/interactive-map";
 
 const legend = [
   { label: "Available", color: "bg-[#2ea36f]" },
@@ -38,63 +39,25 @@ const LotAvailabilities = () => {
               </div>
 
               <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[#e4e7de] bg-[#f9faf7] p-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <Plus className="size-4 text-[#1f5c34]" />
-                  Zoom In
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Minus className="size-4 text-[#1f5c34]" />
-                  Zoom Out
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <RefreshCcw className="size-4 text-[#1f5c34]" />
-                  Reset View
-                </div>
                 <div className="flex items-center gap-2 text-sm text-[#4f5f53]">
                   <Info className="size-4 text-[#1f5c34]" />
-                  Hover lots to preview status
+                  Use mouse wheel to zoom, drag to pan, or use the controls on the map
                 </div>
               </div>
 
               <div className="rounded-[28px] border border-[#e4e7de] bg-gradient-to-br from-white to-[#f3f5ef] p-4 shadow-inner">
-                <div className="flex flex-col gap-4 lg:flex-row">
-                  <div className="flex-1 space-y-3">
-                    <div className="grid gap-2 text-sm text-[#4c594e]">
-                      {legend.map((item) => (
-                        <div key={item.label} className="flex items-center gap-2">
-                          <span className={`h-3 w-3 rounded-full ${item.color}`} />
-                          <span>{item.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-[#7a867b]">
-                      This is a static preview. Zoom and pan interactions will be activated once the full SVG map is
-                      available.
-                    </p>
-                  </div>
-
-                  <div className="flex-1 rounded-2xl border border-dashed border-[#cbd2c7] bg-white/70 p-4">
-                    <div className="h-64 rounded-xl border border-[#e4e4e0] bg-[repeating-linear-gradient(90deg,#f9f9f7,#f9f9f7_18px,#ededeb_19px),repeating-linear-gradient(#f9f9f7,#f9f9f7_18px,#ededeb_19px)] relative overflow-hidden">
-                      <div className="absolute inset-8 border-2 border-[#c4cec0] rounded-xl" />
-                      <div className="absolute inset-16 grid grid-cols-8 gap-2">
-                        {Array.from({ length: 48 }).map((_, idx) => (
-                          <div key={idx} className="rounded-md border border-[#d9ded4] bg-white hover:bg-[#e9f4ed]" />
-                        ))}
-                      </div>
-                      <div className="absolute top-3 right-3 flex flex-col gap-2 text-xs">
-                        <Button size="icon" className="h-8 w-8 rounded-full bg-white text-[#1f5c34]" variant="outline">
-                          <Plus className="size-4" />
-                        </Button>
-                        <Button size="icon" className="h-8 w-8 rounded-full bg-white text-[#1f5c34]" variant="outline">
-                          <Minus className="size-4" />
-                        </Button>
-                        <Button size="icon" className="h-8 w-8 rounded-full bg-white text-[#1f5c34]" variant="outline">
-                          <RefreshCcw className="size-4" />
-                        </Button>
-                      </div>
-                    </div>
+                <div className="rounded-2xl border border-[#cbd2c7] bg-white/70 p-4">
+                  <div className="h-[600px] w-full rounded-xl border border-[#e4e4e0] bg-[#f9faf7] relative" style={{ overflow: "hidden" }}>
+                    <InteractiveMap
+                      svgPath="/Promenade_Map.svg"
+                      className="w-full h-full"
+                      legend={legend}
+                    />
                   </div>
                 </div>
+                <p className="mt-3 text-xs text-[#7a867b] text-center">
+                  Interactive map with zoom and pan functionality. Click and drag to navigate, or use the zoom controls.
+                </p>
               </div>
             </div>
           </div>

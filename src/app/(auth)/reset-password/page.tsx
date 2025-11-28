@@ -32,8 +32,11 @@ import { Loader2 } from "lucide-react";
 
 const images = [
   "/auth-slider/1.png",
-  "/auth-slider/2.png",
-  "/auth-slider/3.png",
+  "/auth-slider/2.jpg",
+  "/auth-slider/3.jpg",
+  "/auth-slider/4.jpg",
+  "/auth-slider/5.jpg",
+  "/auth-slider/6.jpg",
 ];
 
 const formSchema = z

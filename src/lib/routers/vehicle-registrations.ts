@@ -31,6 +31,8 @@ const vehicleRegistrationSchema = z.object({
   relationshipToVehicle: z.enum(["OWNER", "FAMILY_MEMBER", "COMPANY_DRIVER"]),
   orAttachment: z.string().optional(),
   crAttachment: z.string().optional(),
+  paymentMethod: z.enum(["CASH", "GCASH", "MAYA", "OTHER_BANK"]).optional(),
+  proofOfPayment: z.string().optional(),
   residentId: z.string().optional(),
 });
 
@@ -141,6 +143,84 @@ export const vehicleRegistrationsRouter = createTRPCRouter({
         data: {
           ...input,
           residentId: input.residentId && input.residentId !== "" ? input.residentId : null,
+        },
+        include: {
+          resident: {
+            select: {
+              id: true,
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              suffix: true,
+            },
+          },
+        },
+      });
+
+      await createSystemLog({
+        userId: ctx.auth.user.id,
+        action: LogAction.CREATE,
+        module: LogModule.VEHICLE_REGISTRATIONS,
+        entityId: result.id,
+        entityType: "VehicleRegistration",
+        description: createLogDescription(
+          LogAction.CREATE,
+          "Vehicle Registration",
+          `${result.brand} ${result.model} (${result.plateNumber})`
+        ),
+        metadata: { plateNumber: result.plateNumber, vehicleType: result.vehicleType },
+      });
+
+      return result;
+    }),
+  createForResident: protectedProcedure
+    .input(vehicleRegistrationSchema.omit({ id: true }))
+    .mutation(async ({ input, ctx }) => {
+      const userEmail = ctx.auth.user.email;
+
+      // Get current user's resident record (household head)
+      const headResident = await prisma.resident.findFirst({
+        where: {
+          emailAddress: userEmail,
+          isHead: true,
+        },
+      });
+
+      if (!headResident || !headResident.mapId) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "You must be a registered resident to register a vehicle.",
+        });
+      }
+
+      // Get all residents with the same mapId (household members)
+      const householdMembers = await prisma.resident.findMany({
+        where: {
+          mapId: headResident.mapId,
+          isArchived: false,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      const memberIds = householdMembers.map((m) => m.id);
+
+      // Validate that the residentId (if provided) belongs to the user's household
+      if (input.residentId && !memberIds.includes(input.residentId)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only register vehicles for members of your household.",
+        });
+      }
+
+      // If no residentId is provided, default to the head of household
+      const residentId = input.residentId || headResident.id;
+
+      const result = await prisma.vehicleRegistration.create({
+        data: {
+          ...input,
+          residentId: residentId,
         },
         include: {
           resident: {

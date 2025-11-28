@@ -31,8 +31,11 @@ import { toast } from "sonner";
 
 const images = [
   "/auth-slider/1.png",
-  "/auth-slider/2.png",
-  "/auth-slider/3.png",
+  "/auth-slider/2.jpg",
+  "/auth-slider/3.jpg",
+  "/auth-slider/4.jpg",
+  "/auth-slider/5.jpg",
+  "/auth-slider/6.jpg",
 ];
 
 type SignUpFormData = {
@@ -118,6 +121,32 @@ const calculateAge = (date: string) => {
   return age >= 0 ? String(age) : "";
 };
 
+// Parse Google name into first, middle, and last name
+const parseGoogleName = (fullName: string | null | undefined) => {
+  if (!fullName) return { firstName: "", middleName: "", lastName: "" };
+
+  const nameParts = fullName.trim().split(/\s+/);
+
+  if (nameParts.length === 0) {
+    return { firstName: "", middleName: "", lastName: "" };
+  }
+
+  if (nameParts.length === 1) {
+    return { firstName: nameParts[0], middleName: "", lastName: "" };
+  }
+
+  if (nameParts.length === 2) {
+    return { firstName: nameParts[0], middleName: "", lastName: nameParts[1] };
+  }
+
+  // 3 or more parts: first name, middle name(s), last name
+  const firstName = nameParts[0];
+  const lastName = nameParts[nameParts.length - 1];
+  const middleName = nameParts.slice(1, -1).join(" ");
+
+  return { firstName, middleName, lastName };
+};
+
 const Page = () => {
   const [api, setApi] = React.useState<CarouselApi>();
   const [current, setCurrent] = React.useState(0);
@@ -152,6 +181,33 @@ const Page = () => {
     }
   }, []);
 
+  // Populate name fields from Google session data
+  React.useEffect(() => {
+    const populateFromGoogle = async () => {
+      try {
+        const session = await authClient.getSession();
+        if (session?.data?.user?.name && (!formData.firstName || !formData.lastName)) {
+          const parsedName = parseGoogleName(session.data.user.name);
+          const userEmail = session.data?.user?.email || "";
+
+          setFormData((prev) => ({
+            ...prev,
+            firstName: prev.firstName || parsedName.firstName,
+            middleName: prev.middleName || parsedName.middleName,
+            lastName: prev.lastName || parsedName.lastName,
+            email: prev.email || userEmail,
+          }));
+        }
+      } catch (error) {
+        // Silently fail if session check fails
+        console.error("Failed to get session:", error);
+      }
+    };
+
+    populateFromGoogle();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   React.useEffect(() => {
     if (typeof window === "undefined") return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
@@ -159,9 +215,14 @@ const Page = () => {
 
   const progressValue = ((activeStep + 1) / stepTitles.length) * 100;
   const isLastStep = activeStep === stepTitles.length - 1;
-  const canAdvance = requiredFieldsPerStep[activeStep].every(
-    (field) => formData[field].trim().length > 0
-  );
+  const canAdvance = requiredFieldsPerStep[activeStep].every((field) => {
+    const value = formData[field];
+    if (field === "contactNumber") {
+      // Contact number must have at least 10 digits
+      return String(value).trim().length >= 10;
+    }
+    return String(value).trim().length > 0;
+  });
 
   const handleFieldChange =
     (field: keyof SignUpFormData) =>
@@ -170,7 +231,14 @@ const Page = () => {
         typeof value === "string" ? value : value.target.value;
 
       setFormData((prev) => {
-        const next = { ...prev, [field]: resolvedValue };
+        const next = { ...prev };
+
+        if (field === "contactNumber") {
+          // Only allow numeric characters
+          next[field] = resolvedValue.replace(/\D/g, "");
+        } else {
+          next[field] = resolvedValue;
+        }
 
         if (field === "dateOfBirth") {
           next.age = calculateAge(resolvedValue);
@@ -379,7 +447,10 @@ const Page = () => {
                 type="tel"
                 value={formData.contactNumber}
                 onChange={handleFieldChange("contactNumber")}
-                placeholder="+63 900 000 0000"
+                placeholder="639000000000"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={15}
               />
             </div>
             <div className="grid gap-2">
@@ -414,7 +485,7 @@ const Page = () => {
               onClick={async () => {
                 const { error } = await authClient.signIn.social({
                   provider: "google",
-                  callbackURL: "/complete-profile",
+                  callbackURL: "/sign-up",
                 });
 
                 if (error) {

@@ -7,6 +7,7 @@ import {
   MoreHorizontal,
   ArchiveIcon,
   RefreshCwIcon,
+  EyeIcon,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,13 @@ const CellActions = ({ vehicle }: { vehicle: VehicleRegistration }) => {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
+
+          <DropdownMenuItem
+            onClick={() => router.push(`/admin/vehicle-registrations/${vehicle.id}/view`)}
+          >
+            <EyeIcon className="size-4" />
+            View Details
+          </DropdownMenuItem>
 
           <DropdownMenuItem
             onClick={() => router.push(`/admin/vehicle-registrations/${vehicle.id}`)}

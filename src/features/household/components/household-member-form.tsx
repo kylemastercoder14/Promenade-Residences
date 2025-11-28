@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Progress } from "@/components/ui/progress";
 import { useAddHouseholdMember, useGetMyResident } from "../hooks/use-household";
 import { ResidencyType, Sex } from "@prisma/client";
@@ -83,7 +82,7 @@ export const HouseholdMemberForm = () => {
   const router = useRouter();
   const [activeStep, setActiveStep] = useState(0);
   const [formData, setFormData] = useState<HouseholdMemberFormData>({
-    typeOfResidency: "",
+    typeOfResidency: "homeowner", // Automatically set to owner
     firstName: "",
     middleName: "",
     lastName: "",
@@ -169,41 +168,7 @@ export const HouseholdMemberForm = () => {
       case 0:
         return (
           <div className="grid gap-4">
-            <div className="grid gap-3">
-              <Label>Type of Residency</Label>
-              <RadioGroup
-                value={formData.typeOfResidency}
-                onValueChange={handleFieldChange("typeOfResidency")}
-                className="grid lg:grid-cols-2 grid-cols-1 gap-3"
-              >
-                {residencyOptions.map((option) => {
-                  const isActive = formData.typeOfResidency === option.value;
-
-                  return (
-                    <label
-                      key={option.value}
-                      className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition ${
-                        isActive
-                          ? "border-[#327248] bg-[#327248]/5 shadow-sm"
-                          : "border-border hover:border-primary/50"
-                      }`}
-                    >
-                      <RadioGroupItem
-                        value={option.value}
-                        className="mt-1"
-                        aria-label={option.title}
-                      />
-                      <div>
-                        <p className="font-semibold">{option.title}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {option.description}
-                        </p>
-                      </div>
-                    </label>
-                  );
-                })}
-              </RadioGroup>
-            </div>
+            {/* Type of Residency is automatically set to "Owner" and hidden */}
             <div className="grid gap-2">
               <Label>First Name</Label>
               <Input

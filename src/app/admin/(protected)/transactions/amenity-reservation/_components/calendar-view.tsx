@@ -36,6 +36,7 @@ import {
   WalletIcon,
   FileTextIcon,
   Printer,
+  Eye,
 } from "lucide-react";
 import {
   useArchiveAmenityReservation,
@@ -393,6 +394,10 @@ const ReservationCard = ({
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
               <DropdownMenuSeparator />
+              <DropdownMenuItem onSelect={() => router.push(`/admin/transactions/amenity-reservation/${reservation.id}/view`)}>
+                <Eye className="h-4 w-4" />
+                View Details
+              </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => router.push(`/admin/transactions/amenity-reservation/${reservation.id}`)}>
                 <Edit className="h-4 w-4" />
                 Edit

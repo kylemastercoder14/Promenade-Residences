@@ -14,18 +14,29 @@ const amenityReservationSchema = z.object({
   userType: z.enum(["resident", "tenant", "visitor"]),
   userId: z.string().optional(),
   fullName: z.string().min(1, "Full name is required"),
+  email: z.string().email("Invalid email address").optional().or(z.literal("")),
   amenity: z.enum(["COURT", "GAZEBO", "PARKING_AREA"]),
   date: z.date(),
   startTime: z.string().min(1, "Start time is required"),
   endTime: z.string().min(1, "End time is required"),
   numberOfGuests: z.number().min(1, "Number of guests is required"),
   purpose: z.string().optional(),
-  paymentMethod: z.string().min(1, "Payment method is required"),
+  paymentMethod: z.enum(["CASH", "GCASH", "MAYA", "OTHER_BANK"]).optional(),
   amountToPay: z.number().min(0),
   amountPaid: z.number().min(0),
   status: z.enum(["pending", "approved", "rejected", "cancelled"]).default("pending"),
   paymentStatus: z.enum(["pending", "paid", "refunded"]).default("pending"),
   receiptUrl: z.string().optional(),
+  proofOfPayment: z.string().optional(),
+}).refine((data) => {
+  // If payment method is not CASH, proof of payment is required
+  if (data.paymentMethod && data.paymentMethod !== "CASH" && !data.proofOfPayment) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Proof of payment is required for non-cash payment methods",
+  path: ["proofOfPayment"],
 });
 
 export const amenityReservationsRouter = createTRPCRouter({
@@ -247,18 +258,20 @@ export const amenityReservationsRouter = createTRPCRouter({
           userType: userTypeMap[input.userType],
           userId: input.userId || null,
           fullName: input.fullName,
+          email: input.email && input.email !== "" ? input.email : null,
           amenity: input.amenity,
           date: normalizedDate,
           startTime: input.startTime,
           endTime: input.endTime,
           numberOfGuests: input.numberOfGuests,
           purpose: input.purpose,
-          paymentMethod: input.paymentMethod,
+          paymentMethod: input.paymentMethod ? input.paymentMethod as "CASH" | "GCASH" | "MAYA" | "OTHER_BANK" : null,
           amountToPay: calculatedAmount,
           amountPaid: input.amountPaid,
           status: statusMap[input.status],
           paymentStatus: paymentStatusMap[input.paymentStatus],
           receiptUrl: input.receiptUrl,
+          proofOfPayment: input.proofOfPayment,
         },
       });
 
@@ -371,18 +384,20 @@ export const amenityReservationsRouter = createTRPCRouter({
           userType: userTypeMap[input.userType],
           userId: input.userId || null,
           fullName: input.fullName,
+          email: input.email && input.email !== "" ? input.email : null,
           amenity: input.amenity,
           date: normalizedDate,
           startTime: input.startTime,
           endTime: input.endTime,
           numberOfGuests: input.numberOfGuests,
           purpose: input.purpose,
-          paymentMethod: input.paymentMethod,
+          paymentMethod: input.paymentMethod ? input.paymentMethod as "CASH" | "GCASH" | "MAYA" | "OTHER_BANK" : null,
           amountToPay: calculatedAmount,
           amountPaid: calculatedAmount, // Auto-set to amountToPay
           status: "APPROVED", // Auto-approved
           paymentStatus: "PAID", // Auto-paid
           receiptUrl: null, // TODO: Generate receipt and upload
+          proofOfPayment: input.proofOfPayment,
         },
       });
 
@@ -514,18 +529,20 @@ export const amenityReservationsRouter = createTRPCRouter({
           userType: userTypeMap[input.userType],
           userId: input.userId || null,
           fullName: input.fullName,
+          email: input.email && input.email !== "" ? input.email : null,
           amenity: input.amenity,
           date: normalizedDate,
           startTime: input.startTime,
           endTime: input.endTime,
           numberOfGuests: input.numberOfGuests,
           purpose: input.purpose,
-          paymentMethod: input.paymentMethod,
+          paymentMethod: input.paymentMethod ? input.paymentMethod as "CASH" | "GCASH" | "MAYA" | "OTHER_BANK" : null,
           amountToPay: input.amountToPay,
           amountPaid: input.amountPaid,
           status: statusMap[input.status],
           paymentStatus: paymentStatusMap[input.paymentStatus],
           receiptUrl: input.receiptUrl,
+          proofOfPayment: input.proofOfPayment,
         },
       });
 

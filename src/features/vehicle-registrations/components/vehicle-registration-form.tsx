@@ -53,7 +53,18 @@ const formSchema = z.object({
   relationshipToVehicle: z.enum(["OWNER", "FAMILY_MEMBER", "COMPANY_DRIVER"]),
   orAttachment: z.string().optional(),
   crAttachment: z.string().optional(),
+  paymentMethod: z.enum(["CASH", "GCASH", "MAYA", "OTHER_BANK"]).optional(),
+  proofOfPayment: z.string().optional(),
   residentId: z.string().optional(),
+}).refine((data) => {
+  // If payment method is not CASH, proof of payment is required
+  if (data.paymentMethod && data.paymentMethod !== "CASH" && !data.proofOfPayment) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Proof of payment is required for non-cash payment methods",
+  path: ["proofOfPayment"],
 });
 
 export const VehicleRegistrationForm = ({
@@ -108,6 +119,13 @@ export const VehicleRegistrationForm = ({
         | "COMPANY_DRIVER",
       orAttachment: initialData?.orAttachment ?? undefined,
       crAttachment: initialData?.crAttachment ?? undefined,
+      paymentMethod: (initialData?.paymentMethod ?? undefined) as
+        | "CASH"
+        | "GCASH"
+        | "MAYA"
+        | "OTHER_BANK"
+        | undefined,
+      proofOfPayment: initialData?.proofOfPayment ?? undefined,
       residentId: initialData?.residentId ?? undefined,
     },
   });
@@ -467,6 +485,73 @@ export const VehicleRegistrationForm = ({
                     </FormControl>
                     <FormDescription>
                       Upload Certificate of Registration (CR) document
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="paymentMethod"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Payment Method{" "}
+                      <span className="text-muted-foreground">(optional)</span>
+                    </FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select payment method" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="CASH">Cash</SelectItem>
+                        <SelectItem value="GCASH">GCash</SelectItem>
+                        <SelectItem value="OTHER_BANK">Bank Transfer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Select the payment method used for registration
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="proofOfPayment"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Proof of Payment{" "}
+                      {form.watch("paymentMethod") && form.watch("paymentMethod") !== "CASH" ? (
+                        <span className="text-destructive">*</span>
+                      ) : (
+                        <span className="text-muted-foreground">(optional)</span>
+                      )}
+                    </FormLabel>
+                    <FormControl>
+                      <ImageUpload
+                        imageCount={1}
+                        maxSize={5}
+                        onImageUpload={(url) =>
+                          field.onChange(typeof url === "string" ? url : url[0])
+                        }
+                        defaultValue={field.value}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {form.watch("paymentMethod") && form.watch("paymentMethod") !== "CASH"
+                        ? "Upload proof of payment (required for non-cash payments)"
+                        : "Upload proof of payment (optional for cash payments)"}
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

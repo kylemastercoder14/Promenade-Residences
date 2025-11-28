@@ -233,11 +233,8 @@ const ImageUpload = ({
 			</div>
 			<p className="mt-2 font-medium">Drag & drop files here</p>
 			<p className="mt-2 mb-4 text-sm text-muted-foreground">
-			  or click to browse (max {imageCount || 1} file(s), up to{" "}
+			  (max {imageCount || 1} file(s), up to{" "}
 			  {maxSize || 4}MB each)
-			</p>
-			<p className="text-xs text-muted-foreground mb-2">
-			  Supports: Images (PNG, JPG, SVG, WEBP, AVIF, GIF) and Documents (PDF, DOC, DOCX, TXT, XLS, XLSX, PPT, PPTX)
 			</p>
 			<Button type="button" variant="secondary">
 			  Browse files

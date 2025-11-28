@@ -564,7 +564,7 @@ export const authRouter = createTRPCRouter({
       };
 
       // Determine the status to display - use paymentStatus if available, otherwise use status
-      let displayStatus = reservation.status;
+      let displayStatus: string = reservation.status;
       if (reservation.paymentStatus === "PAID" && reservation.status === "APPROVED") {
         displayStatus = "PAID";
       } else if (reservation.paymentStatus === "PENDING" && reservation.status === "PENDING") {

@@ -15,10 +15,12 @@ const Page = async () => {
 
   return (
     <div>
-      <Heading
-        title="Contact Messages"
-        description="Review contact form submissions from residents and visitors."
-      />
+      <div className="flex items-center justify-between">
+        <Heading
+          title="Contact Messages"
+          description="Review contact form submissions from residents and visitors."
+        />
+      </div>
 
       <div className="mt-5">
         <HydrateClient>

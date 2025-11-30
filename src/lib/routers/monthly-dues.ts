@@ -35,6 +35,49 @@ const monthlyDueSchema = z.object({
 });
 
 export const monthlyDuesRouter = createTRPCRouter({
+  // Get payment transactions for a resident (for receipt generation)
+  getTransactions: protectedProcedure
+    .input(
+      z.object({
+        residentId: z.string(),
+        year: z.number().int().optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      const currentYear = input.year || new Date().getFullYear();
+
+      const transactions = await prisma.paymentTransaction.findMany({
+        where: {
+          residentId: input.residentId,
+          createdAt: {
+            gte: new Date(currentYear, 0, 1),
+            lt: new Date(currentYear + 1, 0, 1),
+          },
+        },
+        include: {
+          monthlyDue: {
+            select: {
+              month: true,
+              year: true,
+            },
+          },
+          resident: {
+            select: {
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              suffix: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+      return transactions;
+    }),
+
   // Get all monthly dues for a specific resident with balance calculations
   getByResident: protectedProcedure
     .input(
@@ -245,6 +288,43 @@ export const monthlyDuesRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const { applyAdvance, ...paymentData } = input;
 
+      // Calculate total balance for the current year to prevent overpayment
+      const currentYear = new Date().getFullYear();
+      const currentMonth = new Date().getMonth() + 1;
+
+      // Get all payments for the current year
+      const allYearPayments = await prisma.monthlyDue.findMany({
+        where: {
+          residentId: input.residentId,
+          year: currentYear,
+        },
+      });
+
+      // Calculate total balance (sum of all unpaid amounts)
+      const totalBalance = Array.from({ length: 12 }, (_, i) => {
+        const month = i + 1;
+        const monthPayments = allYearPayments.filter((p) => p.month === month);
+        const totalPaid = monthPayments.reduce((sum, p) => sum + p.amountPaid, 0);
+        return Math.max(0, MONTHLY_DUE_AMOUNT - totalPaid);
+      }).reduce((sum, balance) => sum + balance, 0);
+
+      // Calculate what the new total paid would be after this payment
+      const monthPayments = allYearPayments.filter((p) => p.month === input.month);
+      const currentMonthTotalPaid = monthPayments.reduce((sum, p) => sum + p.amountPaid, 0);
+      const newMonthTotalPaid = currentMonthTotalPaid + paymentData.amountPaid;
+      const monthBalance = Math.max(0, MONTHLY_DUE_AMOUNT - currentMonthTotalPaid);
+
+      // Check if this payment would exceed the month's balance
+      const monthExcess = newMonthTotalPaid > MONTHLY_DUE_AMOUNT ? newMonthTotalPaid - MONTHLY_DUE_AMOUNT : 0;
+
+      // If payment exceeds month balance and applyAdvance is false, throw error
+      if (monthExcess > 0 && !applyAdvance) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `Payment exceeds the month's balance by ₱${monthExcess.toFixed(2)}. You must enable 'Apply Advance Payment' to submit an excess amount.`,
+        });
+      }
+
       // Get existing payment for this month/year
       const existing = await prisma.monthlyDue.findFirst({
         where: {
@@ -254,10 +334,10 @@ export const monthlyDuesRouter = createTRPCRouter({
         },
       });
 
-      let result;
+      let monthlyDueRecord;
       if (existing) {
         // Update existing payment
-        result = await prisma.monthlyDue.update({
+        monthlyDueRecord = await prisma.monthlyDue.update({
           where: { id: existing.id },
           data: {
             amountPaid: existing.amountPaid + paymentData.amountPaid,
@@ -269,13 +349,28 @@ export const monthlyDuesRouter = createTRPCRouter({
         });
       } else {
         // Create new payment
-        result = await prisma.monthlyDue.create({
+        monthlyDueRecord = await prisma.monthlyDue.create({
           data: {
             ...paymentData,
             status: MonthlyDueStatus.PENDING,
           },
         });
       }
+
+      // Create a transaction record for this payment
+      const transaction = await prisma.paymentTransaction.create({
+        data: {
+          monthlyDueId: monthlyDueRecord.id,
+          residentId: input.residentId,
+          amount: paymentData.amountPaid,
+          paymentMethod: paymentData.paymentMethod,
+          notes: paymentData.notes,
+          proofOfPayment: paymentData.attachment,
+          status: MonthlyDueStatus.PENDING,
+        },
+      });
+
+      const result = { ...monthlyDueRecord, transactionId: transaction.id };
 
       // Handle advance payment if enabled
       if (applyAdvance) {
@@ -434,6 +529,33 @@ export const monthlyDuesRouter = createTRPCRouter({
     .mutation(async ({ input, ctx }) => {
       const { payments, ...commonData } = input;
       const results = [];
+      const transactions = [];
+
+      // Calculate total balance for validation
+      const currentYear = new Date().getFullYear();
+      const allYearPayments = await prisma.monthlyDue.findMany({
+        where: {
+          residentId: input.residentId,
+          year: currentYear,
+        },
+      });
+
+      // Validate each payment before processing
+      for (const payment of payments) {
+        const monthPayments = allYearPayments.filter((p) => p.month === payment.month);
+        const currentMonthTotalPaid = monthPayments.reduce((sum, p) => sum + p.amountPaid, 0);
+        const newMonthTotalPaid = currentMonthTotalPaid + payment.amountPaid;
+        const monthExcess = newMonthTotalPaid > MONTHLY_DUE_AMOUNT ? newMonthTotalPaid - MONTHLY_DUE_AMOUNT : 0;
+
+        // If payment exceeds month balance and applyAdvance is false, throw error
+        if (monthExcess > 0 && !input.applyAdvance) {
+          const monthName = new Date(input.year, payment.month - 1, 1).toLocaleString("default", { month: "long" });
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: `Payment for ${monthName} exceeds the month's balance by ₱${monthExcess.toFixed(2)}. You must enable 'Apply Advance Payment' to submit an excess amount.`,
+          });
+        }
+      }
 
       // Process each payment
       for (const payment of payments) {
@@ -445,9 +567,9 @@ export const monthlyDuesRouter = createTRPCRouter({
           },
         });
 
-        let result;
+        let monthlyDueRecord;
         if (existing) {
-          result = await prisma.monthlyDue.update({
+          monthlyDueRecord = await prisma.monthlyDue.update({
             where: { id: existing.id },
             data: {
               amountPaid: existing.amountPaid + payment.amountPaid,
@@ -458,7 +580,7 @@ export const monthlyDuesRouter = createTRPCRouter({
             },
           });
         } else {
-          result = await prisma.monthlyDue.create({
+          monthlyDueRecord = await prisma.monthlyDue.create({
             data: {
               residentId: input.residentId,
               month: payment.month,
@@ -471,7 +593,22 @@ export const monthlyDuesRouter = createTRPCRouter({
             },
           });
         }
-        results.push(result);
+
+        // Create a transaction record for this payment
+        const transaction = await prisma.paymentTransaction.create({
+          data: {
+            monthlyDueId: monthlyDueRecord.id,
+            residentId: input.residentId,
+            amount: payment.amountPaid,
+            paymentMethod: commonData.paymentMethod,
+            notes: commonData.notes,
+            proofOfPayment: commonData.attachment,
+            status: MonthlyDueStatus.PENDING,
+          },
+        });
+
+        transactions.push(transaction);
+        results.push({ ...monthlyDueRecord, transactionId: transaction.id });
       }
 
       // Handle advance payment if enabled
@@ -535,7 +672,6 @@ export const monthlyDuesRouter = createTRPCRouter({
       }
 
       // Check auto-archive status once after all payments are processed
-      const currentYear = new Date().getFullYear();
       const currentMonth = new Date().getMonth() + 1;
       const allPayments = await prisma.monthlyDue.findMany({
         where: {

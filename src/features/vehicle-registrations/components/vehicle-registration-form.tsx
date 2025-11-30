@@ -46,8 +46,6 @@ const formSchema = z.object({
   color: z.string().min(1, "Color is required"),
   plateNumber: z.string().min(1, "Plate number is required"),
   vehicleType: z.enum(["SEDAN", "SUV", "TRUCK", "MOTORCYCLE"]),
-  chassisNumber: z.string().min(1, "Chassis number is required"),
-  engineNumber: z.string().min(1, "Engine number is required"),
   licenseNumber: z.string().min(1, "License number is required"),
   expiryDate: z.date(),
   relationshipToVehicle: z.enum(["OWNER", "FAMILY_MEMBER", "COMPANY_DRIVER"]),
@@ -107,8 +105,6 @@ export const VehicleRegistrationForm = ({
         | "SUV"
         | "TRUCK"
         | "MOTORCYCLE",
-      chassisNumber: initialData?.chassisNumber ?? "",
-      engineNumber: initialData?.engineNumber ?? "",
       licenseNumber: initialData?.licenseNumber ?? "",
       expiryDate: initialData?.expiryDate
         ? new Date(initialData.expiryDate)
@@ -309,37 +305,6 @@ export const VehicleRegistrationForm = ({
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="chassisNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Chassis Number <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter chassis number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="engineNumber"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Engine Number <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter engine number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

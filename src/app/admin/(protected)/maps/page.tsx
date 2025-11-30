@@ -22,12 +22,14 @@ const Page = async () => {
           title="2D Mapping"
           description="Manage and add details on the available lots"
         />
-        <Button asChild variant="primary" size="sm">
-          <Link href="/admin/maps/create">
-            <PlusIcon className="size-4" />
-            Create Lot
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="primary" size="sm">
+            <Link href="/admin/maps/create">
+              <PlusIcon className="size-4" />
+              Create Lot
+            </Link>
+          </Button>
+        </div>
       </div>
       <div className="mt-5">
         <HydrateClient>

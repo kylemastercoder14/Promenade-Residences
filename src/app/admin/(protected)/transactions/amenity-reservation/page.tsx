@@ -22,12 +22,14 @@ const Page = async () => {
           title="Amenity Reservations"
           description="Manage and view amenity reservations"
         />
-        <Button asChild variant="primary" size="sm">
-          <Link href="/admin/transactions/amenity-reservation/create">
-            <PlusIcon className="size-4" />
-            Create Reservation
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="primary" size="sm">
+            <Link href="/admin/transactions/amenity-reservation/create">
+              <PlusIcon className="size-4" />
+              Create Reservation
+            </Link>
+          </Button>
+        </div>
       </div>
       <div className="mt-5">
         <HydrateClient>

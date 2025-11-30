@@ -140,19 +140,61 @@ html {
     size: A4;
   }
 
+  /* Hide UI navigation elements only - be specific */
+  [data-sidebar],
+  [data-sidebar-content],
+  [data-sidebar-header],
+  header:not(.print-header),
+  nav,
+  aside,
+  .no-print,
+  button,
+  [class*="Sidebar"],
+  [class*="Header"]:not(.print-header),
+  [role="banner"],
+  [role="navigation"],
+  [role="complementary"],
+  [class*="sidebar-provider"],
+  [class*="SidebarProvider"],
+  [class*="SidebarInset"] > header {
+    display: none !important;
+  }
+
+  /* Body and main content - ensure visibility */
   body {
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
-    background: white;
-    color: black;
+    background: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 12pt !important;
   }
 
-  /* Hide non-printable elements */
-  nav,
-  header:not(.print-header),
-  button:not(.print-button),
-  .no-print {
-    display: none !important;
+  /* Ensure main content is visible and properly sized */
+  html,
+  body {
+    width: 100% !important;
+    height: auto !important;
+  }
+
+  /* SidebarInset should show its content */
+  [class*="SidebarInset"] {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  main,
+  [role="main"],
+  .print-content {
+    margin: 0 !important;
+    padding: 20px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    position: static !important;
+    display: block !important;
+    visibility: visible !important;
   }
 
   /* Show print-only elements */
@@ -160,39 +202,193 @@ html {
     display: block !important;
   }
 
-  /* Table styles */
+  /* Table container - ensure visibility */
+  [data-slot="table-container"],
+  [class*="table-container"],
+  [class*="DataTable"],
+  [class*="data-table"] {
+    display: block !important;
+    width: 100% !important;
+    overflow: visible !important;
+    visibility: visible !important;
+  }
+
+  /* Table styles - clean and simple */
   table {
-    border-collapse: collapse;
-    width: 100%;
-    margin-bottom: 1rem;
+    border-collapse: collapse !important;
+    width: 100% !important;
+    margin: 10px 0 20px 0 !important;
+    page-break-inside: auto !important;
+    font-size: 10pt !important;
+    display: table !important;
+    visibility: visible !important;
   }
 
-  table th,
-  table td {
-    border: 1px solid #000;
-    padding: 8px;
-    text-align: left;
-  }
-
-  table th {
-    background-color: #f3f4f6 !important;
-    font-weight: bold;
+  table thead {
+    display: table-header-group !important;
+    background: #f5f5f5 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
 
-  /* Prevent page breaks */
-  h1, h2, h3 {
-    page-break-after: avoid;
+  table tbody {
+    display: table-row-group !important;
   }
 
-  tr {
-    page-break-inside: avoid;
+  table tfoot {
+    display: table-footer-group !important;
+  }
+
+  table tr {
+    page-break-inside: avoid !important;
+    page-break-after: auto !important;
+    border-bottom: 1px solid #333 !important;
+  }
+
+  table th,
+  table td {
+    padding: 6px 8px !important;
+    text-align: left !important;
+    border: 1px solid #333 !important;
+    color: black !important;
+    background: white !important;
+    vertical-align: top !important;
+  }
+
+  table th {
+    background: #f5f5f5 !important;
+    font-weight: bold !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Card styles - convert to simple bordered boxes */
+  [class*="Card"],
+  [class*="card"],
+  .card {
+    border: 1px solid #333 !important;
+    page-break-inside: avoid !important;
+    margin: 15px 0 !important;
+    padding: 10px !important;
+    background: white !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+  }
+
+  /* Hide decorative elements but keep content */
+  img:not(.print-keep),
+  svg:not(.print-keep),
+  .lucide,
+  [data-lucide] {
+    display: none !important;
+  }
+
+  /* Text styles */
+  h1, h2, h3, h4, h5, h6 {
+    color: black !important;
+    page-break-after: avoid !important;
+    margin: 10px 0 5px 0 !important;
+  }
+
+  h1 { font-size: 18pt !important; }
+  h2 { font-size: 16pt !important; }
+  h3 { font-size: 14pt !important; }
+  h4 { font-size: 12pt !important; }
+
+  /* Links */
+  a {
+    color: black !important;
+    text-decoration: underline !important;
+  }
+
+  /* Badges and labels - simple text */
+  [class*="Badge"],
+  [class*="badge"],
+  .badge {
+    border: 1px solid #333 !important;
+    background: white !important;
+    padding: 2px 6px !important;
+    display: inline-block !important;
+  }
+
+  /* Remove shadows and effects but keep content visible */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
   }
 
   /* Ensure proper spacing */
   .print-section {
-    margin-bottom: 1.5rem;
-    page-break-inside: avoid;
+    margin: 15px 0 !important;
+    padding: 0 !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Hide overflow and scrollbars */
+  * {
+    overflow: visible !important;
+  }
+
+  /* Page breaks */
+  .page-break {
+    page-break-before: always !important;
+  }
+
+  .no-break {
+    page-break-inside: avoid !important;
+  }
+
+  /* Hide search, filters, pagination controls */
+  [class*="search"]:not(table),
+  [class*="filter"]:not(table),
+  [class*="pagination"]:not(table),
+  [class*="Pagination"]:not(table),
+  input:not([type="hidden"]),
+  select {
+    display: none !important;
+  }
+
+  /* Ensure content visibility - be more specific */
+  div,
+  section,
+  article {
+    visibility: visible !important;
+  }
+
+  /* Ensure table wrapper is visible */
+  [data-slot="table-container"] {
+    display: block !important;
+    visibility: visible !important;
+    width: 100% !important;
+    overflow: visible !important;
+  }
+
+  /* Show all table elements */
+  table,
+  thead,
+  tbody,
+  tfoot,
+  tr,
+  th,
+  td {
+    display: table !important;
+    visibility: visible !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tbody {
+    display: table-row-group !important;
+  }
+
+  tr {
+    display: table-row !important;
+  }
+
+  th,
+  td {
+    display: table-cell !important;
   }
 }

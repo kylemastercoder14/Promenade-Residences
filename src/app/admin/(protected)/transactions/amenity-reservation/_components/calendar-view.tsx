@@ -26,7 +26,6 @@ import { cn } from "@/lib/utils";
 import {
   AmenityType,
   ReservationStatus,
-  PaymentStatus,
 } from "@prisma/client";
 import {
   MoreVertical,
@@ -41,7 +40,6 @@ import {
 import {
   useArchiveAmenityReservation,
   useUpdateReservationStatus,
-  useUpdatePaymentStatus,
   useSuspenseAmenityReservation,
 } from "@/features/amenity-reservations/hooks/use-amenity-reservations";
 import {
@@ -56,6 +54,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useRouter } from 'next/navigation';
 import { toast } from "sonner";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 type Reservation = {
   id: string;
@@ -67,7 +67,6 @@ type Reservation = {
   endTime: string;
   numberOfGuests: number;
   status: ReservationStatus;
-  paymentStatus: PaymentStatus;
   isArchived?: boolean;
 };
 
@@ -233,17 +232,13 @@ const ReservationCard = ({
   const router = useRouter();
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [statusChangeOpen, setStatusChangeOpen] = useState(false);
-  const [paymentStatusChangeOpen, setPaymentStatusChangeOpen] = useState(false);
   const [newStatus, setNewStatus] = useState<ReservationStatus>(
     reservation.status
   );
-  const [newPaymentStatus, setNewPaymentStatus] = useState<PaymentStatus>(
-    reservation.paymentStatus
-  );
+  const [rejectionRemarks, setRejectionRemarks] = useState("");
 
   const archiveMutation = useArchiveAmenityReservation();
   const statusMutation = useUpdateReservationStatus();
-  const paymentStatusMutation = useUpdatePaymentStatus();
   const { data: reservationData } = useSuspenseAmenityReservation(
     reservation.id
   );
@@ -264,18 +259,10 @@ const ReservationCard = ({
     statusMutation.mutate({
       id: reservation.id,
       status: newStatus,
+      rejectionRemarks: newStatus === "REJECTED" ? rejectionRemarks : undefined,
     });
     setStatusChangeOpen(false);
-  };
-
-  const handlePaymentStatusChange = () => {
-    paymentStatusMutation.mutate({
-      id: reservation.id,
-      paymentStatus: newPaymentStatus,
-      amountPaid:
-        newPaymentStatus === "PAID" ? reservationData.amountToPay : undefined,
-    });
-    setPaymentStatusChangeOpen(false);
+    setRejectionRemarks("");
   };
 
   const formatCurrency = (value?: number | null) =>
@@ -347,9 +334,6 @@ const ReservationCard = ({
           <div style="font-size:12px;margin-bottom:4px;">
             <strong>Payment Method:</strong> ${paymentMethod}
           </div>
-          <div style="font-size:12px;margin-bottom:4px;">
-            <strong>Payment Status:</strong> ${reservationData.paymentStatus}
-          </div>
           <div style="font-size:12px;margin-bottom:16px;">
             <strong>Proof of Payment:</strong> ${
               reservationData.receiptUrl
@@ -406,12 +390,6 @@ const ReservationCard = ({
                 <FileTextIcon className="size-4" />
                 Change Status
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setPaymentStatusChangeOpen(true)}
-              >
-                <WalletIcon className="size-4" />
-                Change Payment Status
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setArchiveOpen(true)}>
                 {reservation.isArchived ? (
@@ -442,19 +420,6 @@ const ReservationCard = ({
         <p>
           <span className="font-medium">Guests:</span>{" "}
           {reservation.numberOfGuests} pax
-        </p>
-        <p>
-          <span className="font-medium">Payment:</span>{" "}
-          <Badge
-            variant="outline"
-            className={cn(
-              reservation.paymentStatus === "PAID"
-                ? "border-green-500 text-green-700"
-                : "border-yellow-500 text-yellow-700"
-            )}
-          >
-            {reservation.paymentStatus}
-          </Badge>
         </p>
         <div className="flex justify-between items-center gap-2 mt-2">
           {proofUrl ? (
@@ -496,66 +461,59 @@ const ReservationCard = ({
               Select the new status for this reservation.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="py-4">
-            <Select
-              value={newStatus}
-              onValueChange={(value) =>
-                setNewStatus(value as ReservationStatus)
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="APPROVED">Approved</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="py-4 space-y-4">
+            <div>
+              <Label>Status</Label>
+              <Select
+                value={newStatus}
+                onValueChange={(value) => {
+                  setNewStatus(value as ReservationStatus);
+                  if (value !== "REJECTED") {
+                    setRejectionRemarks("");
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full mt-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="APPROVED">Approved</SelectItem>
+                  <SelectItem value="REJECTED">Rejected</SelectItem>
+                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {newStatus === "REJECTED" && (
+              <div>
+                <Label htmlFor="rejectionRemarks">
+                  Rejection Remarks <span className="text-destructive">*</span>
+                </Label>
+                <Textarea
+                  id="rejectionRemarks"
+                  placeholder="Enter reason for rejection..."
+                  value={rejectionRemarks}
+                  onChange={(e) => setRejectionRemarks(e.target.value)}
+                  className="mt-2"
+                  rows={4}
+                />
+              </div>
+            )}
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleStatusChange}>
+            <AlertDialogCancel
+              onClick={() => {
+                setRejectionRemarks("");
+                setStatusChangeOpen(false);
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleStatusChange}
+              disabled={newStatus === "REJECTED" && !rejectionRemarks.trim()}
+            >
               Update Status
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Payment Status Change Dialog */}
-      <AlertDialog
-        open={paymentStatusChangeOpen}
-        onOpenChange={setPaymentStatusChangeOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Change Payment Status</AlertDialogTitle>
-            <AlertDialogDescription>
-              Select the new payment status for this reservation.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4">
-            <Select
-              value={newPaymentStatus}
-              onValueChange={(value) =>
-                setNewPaymentStatus(value as PaymentStatus)
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="PAID">Paid</SelectItem>
-                <SelectItem value="REFUNDED">Refunded</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handlePaymentStatusChange}>
-              Update Payment Status
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

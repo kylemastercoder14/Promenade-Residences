@@ -19,7 +19,6 @@ import { cn } from "@/lib/utils";
 import {
   AmenityType,
   ReservationStatus,
-  PaymentStatus,
   PaymentMethod,
 } from "@prisma/client";
 
@@ -77,19 +76,6 @@ const getStatusColor = (status: ReservationStatus) => {
       return "bg-gray-100 text-gray-700";
     default:
       return "bg-gray-100 text-gray-700";
-  }
-};
-
-const getPaymentStatusColor = (status: PaymentStatus) => {
-  switch (status) {
-    case "PAID":
-      return "border-green-500 text-green-700";
-    case "PENDING":
-      return "border-yellow-500 text-yellow-700";
-    case "REFUNDED":
-      return "border-blue-500 text-blue-700";
-    default:
-      return "border-gray-500 text-gray-700";
   }
 };
 
@@ -278,18 +264,6 @@ export const AmenityReservationDetails = ({
                   {formatCurrency(reservation.amountPaid)}
                 </p>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Payment Status</p>
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "mt-1",
-                    getPaymentStatusColor(reservation.paymentStatus)
-                  )}
-                >
-                  {reservation.paymentStatus}
-                </Badge>
-              </div>
               {reservation.proofOfPayment && (
                 <div className="md:col-span-2">
                   <p className="text-sm text-muted-foreground mb-2">
@@ -317,7 +291,7 @@ export const AmenityReservationDetails = ({
         <Card>
           <CardHeader>
             <CardTitle>Status Information</CardTitle>
-            <CardDescription>Reservation and payment status</CardDescription>
+            <CardDescription>Reservation status</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -336,6 +310,16 @@ export const AmenityReservationDetails = ({
                 </Badge>
               </div>
             </div>
+            {reservation.status === "REJECTED" && reservation.rejectionRemarks && (
+              <div className="mt-4 pt-4 border-t">
+                <p className="text-sm text-muted-foreground mb-2">Rejection Remarks</p>
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md">
+                  <p className="text-sm text-red-900 dark:text-red-200">
+                    {reservation.rejectionRemarks}
+                  </p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

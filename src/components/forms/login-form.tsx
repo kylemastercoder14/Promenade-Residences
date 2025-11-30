@@ -20,6 +20,7 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Role } from "@prisma/client";
+import { useTRPC } from "@/trpc/client";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -43,6 +44,7 @@ const getRedirectUrl = (role: string | undefined): string => {
 
 export const LoginForm = () => {
   const router = useRouter();
+  const trpc = useTRPC();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     defaultValues: {
@@ -74,6 +76,25 @@ export const LoginForm = () => {
 
       const session = await authClient.getSession();
       const userRole = session?.data?.user?.role as string | undefined;
+
+      // Check if user is approved (for regular users only, admins are auto-approved)
+      if (userRole === Role.USER) {
+        try {
+          // Check approval status using TRPC
+          const approvalStatus = await trpc.auth.checkApprovalStatus.query();
+
+          if (!approvalStatus.isApproved) {
+            toast.error("Your account is pending approval. Please wait for an administrator to approve your account.");
+            setIsSubmitting(false);
+            // Sign out the user
+            await authClient.signOut();
+            return;
+          }
+        } catch (error) {
+          // If check fails, allow login but will be checked in protected routes
+          console.error("Error checking approval status:", error);
+        }
+      }
 
       const redirectUrl = getRedirectUrl(userRole);
 

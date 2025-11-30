@@ -36,8 +36,6 @@ const formSchema = z.object({
   color: z.string().min(1, "Color is required"),
   plateNumber: z.string().min(1, "Plate number is required"),
   vehicleType: z.enum(["SEDAN", "SUV", "TRUCK", "MOTORCYCLE"]),
-  chassisNumber: z.string().min(1, "Chassis number is required"),
-  engineNumber: z.string().min(1, "Engine number is required"),
   licenseNumber: z.string().min(1, "License number is required"),
   expiryDate: z.date(),
   relationshipToVehicle: z.enum(["OWNER", "FAMILY_MEMBER", "COMPANY_DRIVER"]),
@@ -82,8 +80,6 @@ export const MultiStepVehicleForm = () => {
       color: "",
       plateNumber: "",
       vehicleType: "SEDAN",
-      chassisNumber: "",
-      engineNumber: "",
       licenseNumber: "",
       expiryDate: new Date(),
       relationshipToVehicle: "OWNER",
@@ -125,7 +121,7 @@ export const MultiStepVehicleForm = () => {
   const handleNext = () => {
     if (step === "vehicle") {
       // Validate vehicle fields
-      const vehicleFields = ["brand", "model", "yearOfManufacture", "color", "plateNumber", "vehicleType", "chassisNumber", "engineNumber"] as const;
+      const vehicleFields = ["brand", "model", "yearOfManufacture", "color", "plateNumber", "vehicleType"] as const;
       const isValid = vehicleFields.every((field) => {
         const value = form.getValues(field);
         return value !== undefined && value !== null && value !== "";
@@ -297,36 +293,6 @@ export const MultiStepVehicleForm = () => {
                 {form.formState.errors.vehicleType && (
                   <p className="text-sm text-destructive mt-1">
                     {form.formState.errors.vehicleType.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label className="text-sm font-semibold text-[#1a2c1f]">
-                  Chassis Number
-                </Label>
-                <Input
-                  placeholder="Chassis Number"
-                  className="mt-1 bg-[#f6f8f5]"
-                  {...form.register("chassisNumber")}
-                />
-                {form.formState.errors.chassisNumber && (
-                  <p className="text-sm text-destructive mt-1">
-                    {form.formState.errors.chassisNumber.message}
-                  </p>
-                )}
-              </div>
-              <div>
-                <Label className="text-sm font-semibold text-[#1a2c1f]">
-                  Engine Number
-                </Label>
-                <Input
-                  placeholder="Engine Number"
-                  className="mt-1 bg-[#f6f8f5]"
-                  {...form.register("engineNumber")}
-                />
-                {form.formState.errors.engineNumber && (
-                  <p className="text-sm text-destructive mt-1">
-                    {form.formState.errors.engineNumber.message}
                   </p>
                 )}
               </div>
@@ -564,18 +530,6 @@ export const MultiStepVehicleForm = () => {
                       <span className="text-[#6b766d]">Type:</span>{" "}
                       <span className="font-semibold">
                         {form.watch("vehicleType")}
-                      </span>
-                    </p>
-                    <p>
-                      <span className="text-[#6b766d]">Chassis:</span>{" "}
-                      <span className="font-semibold">
-                        {form.watch("chassisNumber")}
-                      </span>
-                    </p>
-                    <p>
-                      <span className="text-[#6b766d]">Engine:</span>{" "}
-                      <span className="font-semibold">
-                        {form.watch("engineNumber")}
                       </span>
                     </p>
                   </div>

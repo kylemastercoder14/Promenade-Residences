@@ -166,25 +166,3 @@ export const useUpdateReservationStatus = () => {
     })
   );
 };
-
-export const useUpdatePaymentStatus = () => {
-  const queryClient = useQueryClient();
-  const trpc = useTRPC();
-
-  return useMutation(
-    trpc.amenityReservations.updatePaymentStatus.mutationOptions({
-      onSuccess: (data) => {
-        queryClient.invalidateQueries(
-          trpc.amenityReservations.getMany.queryOptions()
-        );
-        queryClient.invalidateQueries(
-          trpc.amenityReservations.getOne.queryOptions({ id: data.id })
-        );
-        toast.success("Payment status updated successfully");
-      },
-      onError: (error) => {
-        toast.error(`Failed to update payment status: ${error.message}`);
-      },
-    })
-  );
-};

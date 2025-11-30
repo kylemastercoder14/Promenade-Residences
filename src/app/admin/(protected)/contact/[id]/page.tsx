@@ -16,10 +16,12 @@ const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
 
   return (
     <div>
-      <Heading
-        title="Contact Details"
-        description="View full details of the contact message."
-      />
+      <div className="flex items-center justify-between">
+        <Heading
+          title="Contact Details"
+          description="View full details of the contact message."
+        />
+      </div>
 
       <div className="mt-5">
         <HydrateClient>

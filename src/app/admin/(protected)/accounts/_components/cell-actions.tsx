@@ -7,6 +7,8 @@ import {
   MoreHorizontal,
   ArchiveIcon,
   RefreshCwIcon,
+  CheckIcon,
+  XIcon,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -21,13 +23,16 @@ import {
 import { useRouter } from "next/navigation";
 import { User } from "@prisma/client";
 import { toast } from "sonner";
-import { useArchiveOrRetrieveAccount } from "@/features/accounts/hooks/use-accounts";
+import { useArchiveOrRetrieveAccount, useApproveOrRejectAccount } from "@/features/accounts/hooks/use-accounts";
 import AlertModal from "@/components/alert-modal";
 
 const CellActions = ({ user }: { user: User }) => {
   const router = useRouter();
   const [open, setOpen] = React.useState(false);
+  const [approveOpen, setApproveOpen] = React.useState(false);
+  const [rejectOpen, setRejectOpen] = React.useState(false);
   const archiveOrRetrieve = useArchiveOrRetrieveAccount();
+  const approveOrReject = useApproveOrRejectAccount();
 
   async function handleAction() {
     archiveOrRetrieve.mutate(
@@ -50,6 +55,34 @@ const CellActions = ({ user }: { user: User }) => {
       }
     );
   }
+
+  async function handleApprove() {
+    approveOrReject.mutate(
+      {
+        id: user.id,
+        isApproved: true,
+      },
+      {
+        onSuccess: () => {
+          router.refresh();
+        },
+      }
+    );
+  }
+
+  async function handleReject() {
+    approveOrReject.mutate(
+      {
+        id: user.id,
+        isApproved: false,
+      },
+      {
+        onSuccess: () => {
+          router.refresh();
+        },
+      }
+    );
+  }
   return (
     <>
       <AlertModal
@@ -58,6 +91,20 @@ const CellActions = ({ user }: { user: User }) => {
         description={`You are about to ${user.isArchived ? "retrieve" : "archive"} this account. This action cannot be undone.`}
         isOpen={open}
         onClose={() => setOpen(false)}
+      />
+      <AlertModal
+        onConfirm={handleApprove}
+        title="Approve Account"
+        description="Are you sure you want to approve this account? The user will be able to access the system."
+        isOpen={approveOpen}
+        onClose={() => setApproveOpen(false)}
+      />
+      <AlertModal
+        onConfirm={handleReject}
+        title="Reject Account"
+        description="Are you sure you want to reject this account? The user will not be able to access the system."
+        isOpen={rejectOpen}
+        onClose={() => setRejectOpen(false)}
       />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -77,6 +124,20 @@ const CellActions = ({ user }: { user: User }) => {
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
+
+          {!user.isApproved && (
+            <>
+              <DropdownMenuItem onClick={() => setApproveOpen(true)}>
+                <CheckIcon className="size-4" />
+                Approve
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setRejectOpen(true)}>
+                <XIcon className="size-4" />
+                Reject
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+            </>
+          )}
 
           {user.isArchived ? (
             <DropdownMenuItem onClick={() => setOpen(true)}>

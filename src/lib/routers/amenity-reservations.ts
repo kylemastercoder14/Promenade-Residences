@@ -25,7 +25,6 @@ const amenityReservationSchema = z.object({
   amountToPay: z.number().min(0),
   amountPaid: z.number().min(0),
   status: z.enum(["pending", "approved", "rejected", "cancelled"]).default("pending"),
-  paymentStatus: z.enum(["pending", "paid", "refunded"]).default("pending"),
   receiptUrl: z.string().optional(),
   proofOfPayment: z.string().optional(),
 }).refine((data) => {
@@ -188,19 +187,13 @@ export const amenityReservationsRouter = createTRPCRouter({
         "cancelled": "CANCELLED",
       };
 
-      const paymentStatusMap: Record<string, "PENDING" | "PAID" | "REFUNDED"> = {
-        pending: "PENDING",
-        paid: "PAID",
-        refunded: "REFUNDED",
-      };
-
       // Check for overlapping reservations for the same amenity/date
-      // Check all statuses except CANCELLED (including PENDING)
-      // Normalize date to start of day for comparison
+      // Only check APPROVED and PENDING statuses (REJECTED and CANCELLED don't block bookings)
+      // Normalize date to start of day for comparison (UTC)
       const inputDate = new Date(input.date);
-      inputDate.setHours(0, 0, 0, 0);
+      inputDate.setUTCHours(0, 0, 0, 0);
       const nextDay = new Date(inputDate);
-      nextDay.setDate(nextDay.getDate() + 1);
+      nextDay.setUTCDate(nextDay.getUTCDate() + 1);
 
       const sameDayReservations = await prisma.amenityReservation.findMany({
         where: {
@@ -211,7 +204,7 @@ export const amenityReservationsRouter = createTRPCRouter({
           },
           isArchived: false,
           status: {
-            not: "CANCELLED",
+            in: ["APPROVED", "PENDING"],
           },
         },
         select: {
@@ -249,9 +242,9 @@ export const amenityReservationsRouter = createTRPCRouter({
         });
       }
 
-      // Normalize date to start of day for storage
+      // Normalize date to start of day for storage (UTC)
       const normalizedDate = new Date(input.date);
-      normalizedDate.setHours(0, 0, 0, 0);
+      normalizedDate.setUTCHours(0, 0, 0, 0);
 
       const reservation = await prisma.amenityReservation.create({
         data: {
@@ -269,7 +262,6 @@ export const amenityReservationsRouter = createTRPCRouter({
           amountToPay: calculatedAmount,
           amountPaid: input.amountPaid,
           status: statusMap[input.status],
-          paymentStatus: paymentStatusMap[input.paymentStatus],
           receiptUrl: input.receiptUrl,
           proofOfPayment: input.proofOfPayment,
         },
@@ -314,12 +306,12 @@ export const amenityReservationsRouter = createTRPCRouter({
       }
 
       // Check for overlapping reservations for the same amenity/date (including walk-ins)
-      // Check all statuses except CANCELLED (including PENDING)
-      // Normalize date to start of day for comparison
+      // Only check APPROVED and PENDING statuses (REJECTED and CANCELLED don't block bookings)
+      // Normalize date to start of day for comparison (UTC)
       const inputDate = new Date(input.date);
-      inputDate.setHours(0, 0, 0, 0);
+      inputDate.setUTCHours(0, 0, 0, 0);
       const nextDay = new Date(inputDate);
-      nextDay.setDate(nextDay.getDate() + 1);
+      nextDay.setUTCDate(nextDay.getUTCDate() + 1);
 
       const sameDayReservations = await prisma.amenityReservation.findMany({
         where: {
@@ -330,7 +322,7 @@ export const amenityReservationsRouter = createTRPCRouter({
           },
           isArchived: false,
           status: {
-            not: "CANCELLED",
+            in: ["APPROVED", "PENDING"],
           },
         },
         select: {
@@ -374,9 +366,9 @@ export const amenityReservationsRouter = createTRPCRouter({
         "visitor": "VISITOR",
       };
 
-      // Normalize date to start of day for storage
+      // Normalize date to start of day for storage (UTC)
       const normalizedDate = new Date(input.date);
-      normalizedDate.setHours(0, 0, 0, 0);
+      normalizedDate.setUTCHours(0, 0, 0, 0);
 
       // For walk-in: status = Approved, amountPaid = amountToPay, generate receipt
       const reservation = await prisma.amenityReservation.create({
@@ -395,7 +387,6 @@ export const amenityReservationsRouter = createTRPCRouter({
           amountToPay: calculatedAmount,
           amountPaid: calculatedAmount, // Auto-set to amountToPay
           status: "APPROVED", // Auto-approved
-          paymentStatus: "PAID", // Auto-paid
           receiptUrl: null, // TODO: Generate receipt and upload
           proofOfPayment: input.proofOfPayment,
         },
@@ -453,19 +444,13 @@ export const amenityReservationsRouter = createTRPCRouter({
         "cancelled": "CANCELLED",
       };
 
-      const paymentStatusMap: Record<string, "PENDING" | "PAID" | "REFUNDED"> = {
-        pending: "PENDING",
-        paid: "PAID",
-        refunded: "REFUNDED",
-      };
-
       // Check for overlapping reservations when updating (excluding current)
-      // Check all statuses except CANCELLED (including PENDING)
-      // Normalize date to start of day for comparison
+      // Only check APPROVED and PENDING statuses (REJECTED and CANCELLED don't block bookings)
+      // Normalize date to start of day for comparison (UTC)
       const inputDate = new Date(input.date);
-      inputDate.setHours(0, 0, 0, 0);
+      inputDate.setUTCHours(0, 0, 0, 0);
       const nextDay = new Date(inputDate);
-      nextDay.setDate(nextDay.getDate() + 1);
+      nextDay.setUTCDate(nextDay.getUTCDate() + 1);
 
       const sameDayReservations = await prisma.amenityReservation.findMany({
         where: {
@@ -476,7 +461,7 @@ export const amenityReservationsRouter = createTRPCRouter({
           },
           isArchived: false,
           status: {
-            not: "CANCELLED",
+            in: ["APPROVED", "PENDING"],
           },
           NOT: {
             id: input.id,
@@ -517,9 +502,9 @@ export const amenityReservationsRouter = createTRPCRouter({
         });
       }
 
-      // Normalize date to start of day for storage
+      // Normalize date to start of day for storage (UTC)
       const normalizedDate = new Date(input.date);
-      normalizedDate.setHours(0, 0, 0, 0);
+      normalizedDate.setUTCHours(0, 0, 0, 0);
 
       const result = await prisma.amenityReservation.update({
         where: {
@@ -540,7 +525,6 @@ export const amenityReservationsRouter = createTRPCRouter({
           amountToPay: input.amountToPay,
           amountPaid: input.amountPaid,
           status: statusMap[input.status],
-          paymentStatus: paymentStatusMap[input.paymentStatus],
           receiptUrl: input.receiptUrl,
           proofOfPayment: input.proofOfPayment,
         },
@@ -632,6 +616,7 @@ export const amenityReservationsRouter = createTRPCRouter({
       z.object({
         id: z.string(),
         status: z.enum(["PENDING", "APPROVED", "REJECTED", "CANCELLED"]),
+        rejectionRemarks: z.string().optional(),
       })
     )
     .mutation(({ input }) => {
@@ -641,25 +626,7 @@ export const amenityReservationsRouter = createTRPCRouter({
         },
         data: {
           status: input.status,
-        },
-      });
-    }),
-  updatePaymentStatus: protectedProcedure
-    .input(
-      z.object({
-        id: z.string(),
-        paymentStatus: z.enum(["PENDING", "PAID", "REFUNDED"]),
-        amountPaid: z.number().optional(),
-      })
-    )
-    .mutation(({ input }) => {
-      return prisma.amenityReservation.update({
-        where: {
-          id: input.id,
-        },
-        data: {
-          paymentStatus: input.paymentStatus,
-          ...(input.amountPaid !== undefined && { amountPaid: input.amountPaid }),
+          rejectionRemarks: input.status === "REJECTED" ? input.rejectionRemarks : null,
         },
       });
     }),

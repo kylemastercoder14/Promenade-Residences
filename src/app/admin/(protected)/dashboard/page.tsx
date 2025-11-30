@@ -1,19 +1,29 @@
 "use client";
 
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/client";
+import { Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   IconUsers,
   IconCar,
   IconCalendarCheck,
   IconBuilding,
-  IconPrinter,
   IconCurrencyDollar,
   IconMessageCircle,
   IconCalendarEvent,
+  IconFileReport,
 } from "@tabler/icons-react";
+import { ReportDialog } from "./_components/report-dialog";
 import { CollectionAreaChart } from "@/components/layout/admin/collection-area-chart";
 import { AmenityReservationCalendar } from "@/components/layout/admin/amenity-reservation-calendar";
 import { ReservationStatusChart } from "@/components/layout/admin/reservation-status-chart";
@@ -24,13 +34,18 @@ import {
 import { format } from "date-fns";
 import { useMemo } from "react";
 
+type Period = "daily" | "weekly" | "monthly" | "annually";
+
 const Page = () => {
+  const [period, setPeriod] = useState<Period>("monthly");
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const trpc = useTRPC();
-  const { data: stats } = useSuspenseQuery(
-    trpc.dashboard.getStatistics.queryOptions()
+  const { data: stats, isLoading } = useQuery(
+    trpc.dashboard.getStatistics.queryOptions({ period })
   );
 
   const statistics = useMemo(() => {
+    if (!stats) return [];
     const userCount = stats.accounts.byRole.USER || 0;
     const adminCount = (stats.accounts.byRole.ADMIN || 0) + (stats.accounts.byRole.SUPERADMIN || 0) + (stats.accounts.byRole.ACCOUNTING || 0);
 
@@ -87,6 +102,7 @@ const Page = () => {
   }, [stats]);
 
   const recentTransactions: RecentTransaction[] = useMemo(() => {
+    if (!stats) return [];
     const transactions: RecentTransaction[] = [];
 
     // Add recent monthly dues
@@ -110,7 +126,7 @@ const Page = () => {
     // Add recent reservations
     stats.recentReservations.forEach((reservation) => {
       const reservationStatus =
-        reservation.status === "APPROVED" && reservation.paymentStatus === "PAID"
+        reservation.status === "APPROVED"
           ? ("Completed" as const)
           : reservation.status === "REJECTED" || reservation.status === "CANCELLED"
             ? ("Rejected" as const)
@@ -130,17 +146,28 @@ const Page = () => {
       .slice(0, 5);
   }, [stats]);
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   // Prepare print data
   const printData = useMemo(() => {
+    if (!stats) return null;
     const userCount = stats.accounts.byRole.USER || 0;
     const adminCount = (stats.accounts.byRole.ADMIN || 0) + (stats.accounts.byRole.SUPERADMIN || 0) + (stats.accounts.byRole.ACCOUNTING || 0);
 
+    const periodLabels: Record<Period, string> = {
+      daily: "Daily",
+      weekly: "Weekly",
+      monthly: "Monthly",
+      annually: "Annually",
+    };
+
+    const periodLabel = periodLabels[period];
+    const periodRange = stats.periodRange
+      ? `${format(stats.periodRange.start, "MMM d, yyyy")} - ${format(stats.periodRange.end, "MMM d, yyyy")}`
+      : "";
+
     return {
       generatedAt: format(new Date(), "MMMM d, yyyy 'at' h:mm a"),
+      period: periodLabel,
+      periodRange,
       statistics: [
         { label: "Total Accounts", value: stats.accounts.total, details: `${userCount} Users, ${adminCount} Admins` },
         { label: "Total Residents", value: stats.residents.total, details: `${stats.residents.byType.RESIDENT || 0} Residents, ${stats.residents.byType.TENANT || 0} Tenants` },
@@ -169,7 +196,15 @@ const Page = () => {
       },
       recentTransactions,
     };
-  }, [stats, recentTransactions]);
+  }, [stats, recentTransactions, period]);
+
+  if (isLoading || !stats || !printData) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -179,6 +214,9 @@ const Page = () => {
           <h1 className="text-2xl font-bold">Promenade Residence Dashboard Report</h1>
           <p className="text-sm mt-1">
             Generated on {printData.generatedAt}
+          </p>
+          <p className="text-sm mt-1 font-semibold">
+            Period: {printData.period} ({printData.periodRange})
           </p>
         </div>
 
@@ -330,11 +368,36 @@ const Page = () => {
             transactions, and property status.
           </p>
         </div>
-        <Button onClick={handlePrint} variant="primary" className="shrink-0 no-print">
-          <IconPrinter className="h-4 w-4" />
-          <span>Print Report</span>
-        </Button>
+        <div className="flex items-center gap-4 shrink-0">
+          <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select period" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="daily">Daily</SelectItem>
+              <SelectItem value="weekly">Weekly</SelectItem>
+              <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="annually">Annually</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={() => setReportDialogOpen(true)} variant="primary" className="shrink-0 no-print">
+            <IconFileReport className="h-4 w-4" />
+            <span>Create Report</span>
+          </Button>
+        </div>
       </div>
+
+      {/* Period Indicator */}
+      {stats.periodRange && (
+        <div className="bg-muted/50 rounded-lg p-4 border">
+          <p className="text-sm text-muted-foreground">
+            Showing data for <span className="font-semibold capitalize">{period}</span> period:{" "}
+            <span className="font-medium">
+              {format(stats.periodRange.start, "MMM d, yyyy")} - {format(stats.periodRange.end, "MMM d, yyyy")}
+            </span>
+          </p>
+        </div>
+      )}
 
       {/* Statistics Cards */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -379,6 +442,15 @@ const Page = () => {
         </div>
       </div>
     </div>
+
+    {stats && (
+      <ReportDialog
+        open={reportDialogOpen}
+        onOpenChange={setReportDialogOpen}
+        stats={stats}
+        periodRange={stats.periodRange}
+      />
+    )}
     </>
   );
 };

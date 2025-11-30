@@ -184,11 +184,32 @@ const Page = () => {
                                     )}
                                   </>
                                 )}
-                                {transaction.type === "MONTHLY_DUE" && transaction.metadata.paymentMethod ? (
-                                  <p>
-                                    Payment Method: {String(transaction.metadata.paymentMethod)}
-                                  </p>
-                                ) : null}
+                                {transaction.type === "MONTHLY_DUE" && (
+                                  <>
+                                    {transaction.metadata.paymentMethod && (
+                                      <p>
+                                        Payment Method: {String(transaction.metadata.paymentMethod)}
+                                      </p>
+                                    )}
+                                    {transaction.metadata.proofOfPayment && (
+                                      <p>
+                                        <a
+                                          href={String(transaction.metadata.proofOfPayment)}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-[#1f5c34] hover:underline"
+                                        >
+                                          View Proof of Payment
+                                        </a>
+                                      </p>
+                                    )}
+                                    {transaction.metadata.notes && (
+                                      <p>
+                                        Notes: {String(transaction.metadata.notes)}
+                                      </p>
+                                    )}
+                                  </>
+                                )}
                                 {transaction.type === "VEHICLE_REGISTRATION" && transaction.metadata.vehicleType ? (
                                   <p>
                                     Type: {String(transaction.metadata.vehicleType)}

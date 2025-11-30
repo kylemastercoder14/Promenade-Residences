@@ -24,8 +24,6 @@ const vehicleRegistrationSchema = z.object({
   color: z.string().min(1, "Color is required"),
   plateNumber: z.string().min(1, "Plate number is required"),
   vehicleType: z.enum(["SEDAN", "SUV", "TRUCK", "MOTORCYCLE"]),
-  chassisNumber: z.string().min(1, "Chassis number is required"),
-  engineNumber: z.string().min(1, "Engine number is required"),
   licenseNumber: z.string().min(1, "License number is required"),
   expiryDate: z.date(),
   relationshipToVehicle: z.enum(["OWNER", "FAMILY_MEMBER", "COMPANY_DRIVER"]),

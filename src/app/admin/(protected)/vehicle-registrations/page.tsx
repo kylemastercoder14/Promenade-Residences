@@ -22,12 +22,14 @@ const Page = async () => {
           title="Vehicle Registrations"
           description="Manage vehicle registrations, view details, and handle archiving."
         />
-        <Button asChild variant="primary" size="sm">
-          <Link href="/admin/vehicle-registrations/create">
-            <PlusIcon className="size-4" />
-            Register Vehicle
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="primary" size="sm">
+            <Link href="/admin/vehicle-registrations/create">
+              <PlusIcon className="size-4" />
+              Register Vehicle
+            </Link>
+          </Button>
+        </div>
       </div>
       <div className="mt-5">
         <HydrateClient>

@@ -22,12 +22,14 @@ const Page = async () => {
           title="Announcements"
           description="Manage and create announcements"
         />
-        <Button asChild variant="primary" size="sm">
-          <Link href="/admin/announcements/create">
-            <PlusIcon className="size-4" />
-            Create Announcement
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="primary" size="sm">
+            <Link href="/admin/announcements/create">
+              <PlusIcon className="size-4" />
+              Create Announcement
+            </Link>
+          </Button>
+        </div>
       </div>
       <div className="mt-5">
         <HydrateClient>

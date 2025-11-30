@@ -22,6 +22,7 @@ model User {
   image         String?
   role          Role      @default(USER)
   isArchived    Boolean   @default(false)
+  isApproved    Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @default(now()) @updatedAt
   sessions      Session[]
@@ -118,12 +119,6 @@ enum ReservationStatus {
   CANCELLED
 }
 
-enum PaymentStatus {
-  PENDING
-  PAID
-  REFUNDED
-}
-
 model AmenityReservation {
   id            String            @id @default(uuid())
   userType      UserType
@@ -141,7 +136,7 @@ model AmenityReservation {
   amountToPay   Float
   amountPaid    Float              @default(0)
   status        ReservationStatus  @default(PENDING)
-  paymentStatus PaymentStatus      @default(PENDING)
+  rejectionRemarks String?
   receiptUrl    String?
   proofOfPayment String?
   isArchived    Boolean            @default(false)
@@ -201,8 +196,6 @@ model VehicleRegistration {
   color               String
   plateNumber         String
   vehicleType         VehicleType
-  chassisNumber       String
-  engineNumber        String
   licenseNumber       String
   expiryDate          DateTime
   relationshipToVehicle RelationshipToVehicle
@@ -247,6 +240,7 @@ model Resident {
   map                 Maps?                   @relation(fields: [mapId], references: [id], onDelete: SetNull)
   vehicleRegistrations VehicleRegistration[]
   monthlyDues         MonthlyDue[]
+  paymentTransactions PaymentTransaction[]
   feedbacks           Feedback[]
   createdAt           DateTime                @default(now())
   updatedAt           DateTime                @default(now()) @updatedAt
@@ -280,9 +274,27 @@ model MonthlyDue {
   status        MonthlyDueStatus @default(PENDING)
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @default(now()) @updatedAt
+  transactions  PaymentTransaction[]
 
   @@unique([residentId, month, year])
   @@map("monthly_due")
+}
+
+model PaymentTransaction {
+  id            String        @id @default(uuid())
+  monthlyDueId  String?
+  monthlyDue    MonthlyDue?   @relation(fields: [monthlyDueId], references: [id], onDelete: SetNull)
+  residentId    String
+  resident      Resident      @relation(fields: [residentId], references: [id], onDelete: Cascade)
+  amount        Float         // Amount paid in this transaction
+  paymentMethod PaymentMethod?
+  notes         String?       @db.Text
+  proofOfPayment String?      // Attachment URL
+  status        MonthlyDueStatus @default(PENDING)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @default(now()) @updatedAt
+
+  @@map("payment_transaction")
 }
 
 enum LogAction {

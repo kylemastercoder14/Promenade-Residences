@@ -4,7 +4,8 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, RotateCcw, Maximize2 } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Maximize2, Pencil } from "lucide-react";
+import Link from "next/link";
 import { Maps } from "@prisma/client";
 import { cn } from "@/lib/utils";
 import {
@@ -651,6 +652,14 @@ export const MapViewer = ({ maps }: MapViewerProps) => {
                   <p className="text-base">{selectedMap.notes}</p>
                 </div>
               )}
+              <div className="flex justify-end gap-2 pt-4 border-t">
+                <Button asChild variant="primary">
+                  <Link href={`/admin/maps/${selectedMap.id}`}>
+                    <Pencil className="size-4 mr-2" />
+                    Edit
+                  </Link>
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

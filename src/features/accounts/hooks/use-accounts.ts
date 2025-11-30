@@ -70,3 +70,23 @@ export const useArchiveOrRetrieveAccount = () => {
     })
   );
 };
+
+export const useApproveOrRejectAccount = () => {
+  const queryClient = useQueryClient();
+  const trpc = useTRPC();
+
+  return useMutation(
+    trpc.accounts.approveOrReject.mutationOptions({
+      onSuccess: (data) => {
+        queryClient.invalidateQueries(trpc.accounts.getMany.queryOptions());
+        queryClient.invalidateQueries(
+          trpc.accounts.getOne.queryOptions({ id: data.id })
+        );
+        toast.success(`Account ${data.isApproved ? "approved" : "rejected"} successfully`);
+      },
+      onError: (error) => {
+        toast.error(`Failed to update approval status: ${error.message}`);
+      },
+    })
+  );
+};

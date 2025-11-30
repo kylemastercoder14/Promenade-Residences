@@ -32,9 +32,17 @@ export const accountsRouter = createTRPCRouter({
     )
     .mutation(async ({ input, ctx }) => {
       const user = await prisma.user.findUnique({ where: { id: input.id } });
+
+      // Auto-approve if role is admin (SUPERADMIN, ADMIN, or ACCOUNTING)
+      const isAdminRole = [Role.SUPERADMIN, Role.ADMIN, Role.ACCOUNTING].includes(input.role);
+
       const result = await prisma.user.update({
         where: { id: input.id },
-        data: { role: input.role },
+        data: {
+          role: input.role,
+          // Auto-approve admin roles, keep existing approval status for USER role
+          ...(isAdminRole ? { isApproved: true } : {}),
+        },
       });
 
       await createSystemLog({
@@ -149,4 +157,37 @@ export const accountsRouter = createTRPCRouter({
       orderBy: { createdAt: "desc" },
     });
   }),
+  approveOrReject: accountsProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        isApproved: z.boolean(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const user = await prisma.user.findUnique({ where: { id: input.id } });
+      const result = await prisma.user.update({
+        where: { id: input.id },
+        data: { isApproved: input.isApproved },
+      });
+
+      await createSystemLog({
+        userId: ctx.auth.user.id,
+        action: LogAction.STATUS_CHANGE,
+        module: LogModule.ACCOUNTS,
+        entityId: input.id,
+        entityType: "Account",
+        description: createLogDescription(
+          LogAction.STATUS_CHANGE,
+          "Account",
+          user?.email || input.id,
+          `Account ${input.isApproved ? "approved" : "rejected"}`
+        ),
+        metadata: {
+          isApproved: input.isApproved,
+        },
+      });
+
+      return result;
+    }),
 });

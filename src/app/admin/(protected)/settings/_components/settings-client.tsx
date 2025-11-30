@@ -10,14 +10,16 @@ import { IconSettings } from "@tabler/icons-react";
 export const SettingsClient = () => {
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <div className="flex items-center gap-3">
-          <IconSettings className="h-8 w-8 text-primary" />
-          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+      <div className="flex items-start justify-between">
+        <div className="space-y-2">
+          <div className="flex items-center gap-3">
+            <IconSettings className="h-8 w-8 text-primary" />
+            <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
+          </div>
+          <p className="text-muted-foreground">
+            Manage system configuration, preferences, and account settings.
+          </p>
         </div>
-        <p className="text-muted-foreground">
-          Manage system configuration, preferences, and account settings.
-        </p>
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">

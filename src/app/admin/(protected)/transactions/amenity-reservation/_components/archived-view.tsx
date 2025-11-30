@@ -31,7 +31,6 @@ import { cn } from "@/lib/utils";
 import {
   AmenityType,
   ReservationStatus,
-  PaymentStatus,
 } from "@prisma/client";
 import {
   MoreVertical,
@@ -45,7 +44,6 @@ import { ReservationForm } from "@/features/amenity-reservations/components/form
 import {
   useArchiveAmenityReservation,
   useUpdateReservationStatus,
-  useUpdatePaymentStatus,
   useSuspenseAmenityReservation,
 } from "@/features/amenity-reservations/hooks/use-amenity-reservations";
 import {
@@ -66,6 +64,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 type Reservation = {
   id: string;
@@ -77,7 +77,6 @@ type Reservation = {
   endTime: string;
   numberOfGuests: number;
   status: ReservationStatus;
-  paymentStatus: PaymentStatus;
   isArchived?: boolean;
 };
 
@@ -121,17 +120,13 @@ const ArchivedReservationRow = ({
   const [editOpen, setEditOpen] = useState(false);
   const [archiveOpen, setArchiveOpen] = useState(false);
   const [statusChangeOpen, setStatusChangeOpen] = useState(false);
-  const [paymentStatusChangeOpen, setPaymentStatusChangeOpen] = useState(false);
   const [newStatus, setNewStatus] = useState<ReservationStatus>(
     reservation.status
   );
-  const [newPaymentStatus, setNewPaymentStatus] = useState<PaymentStatus>(
-    reservation.paymentStatus
-  );
+  const [rejectionRemarks, setRejectionRemarks] = useState("");
 
   const archiveMutation = useArchiveAmenityReservation();
   const statusMutation = useUpdateReservationStatus();
-  const paymentStatusMutation = useUpdatePaymentStatus();
   const { data: reservationData } = useSuspenseAmenityReservation(
     reservation.id
   );
@@ -148,18 +143,10 @@ const ArchivedReservationRow = ({
     statusMutation.mutate({
       id: reservation.id,
       status: newStatus,
+      rejectionRemarks: newStatus === "REJECTED" ? rejectionRemarks : undefined,
     });
     setStatusChangeOpen(false);
-  };
-
-  const handlePaymentStatusChange = () => {
-    paymentStatusMutation.mutate({
-      id: reservation.id,
-      paymentStatus: newPaymentStatus,
-      amountPaid:
-        newPaymentStatus === "PAID" ? reservationData.amountToPay : undefined,
-    });
-    setPaymentStatusChangeOpen(false);
+    setRejectionRemarks("");
   };
 
   return (
@@ -193,18 +180,6 @@ const ArchivedReservationRow = ({
           </Badge>
         </TableCell>
         <TableCell>
-          <Badge
-            variant="outline"
-            className={cn(
-              reservation.paymentStatus === "PAID"
-                ? "border-green-500 text-green-700"
-                : "border-yellow-500 text-yellow-700"
-            )}
-          >
-            {reservation.paymentStatus}
-          </Badge>
-        </TableCell>
-        <TableCell>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -234,12 +209,6 @@ const ArchivedReservationRow = ({
               <DropdownMenuItem onClick={() => setStatusChangeOpen(true)}>
                 <FileTextIcon className="size-4" />
                 Change Status
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setPaymentStatusChangeOpen(true)}
-              >
-                <WalletIcon className="size-4" />
-                Change Payment Status
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => setArchiveOpen(true)}>
@@ -273,66 +242,59 @@ const ArchivedReservationRow = ({
               Select the new status for this reservation.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="py-4">
-            <Select
-              value={newStatus}
-              onValueChange={(value) =>
-                setNewStatus(value as ReservationStatus)
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="APPROVED">Approved</SelectItem>
-                <SelectItem value="REJECTED">Rejected</SelectItem>
-                <SelectItem value="CANCELLED">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="py-4 space-y-4">
+            <div>
+              <Label>Status</Label>
+              <Select
+                value={newStatus}
+                onValueChange={(value) => {
+                  setNewStatus(value as ReservationStatus);
+                  if (value !== "REJECTED") {
+                    setRejectionRemarks("");
+                  }
+                }}
+              >
+                <SelectTrigger className="w-full mt-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PENDING">Pending</SelectItem>
+                  <SelectItem value="APPROVED">Approved</SelectItem>
+                  <SelectItem value="REJECTED">Rejected</SelectItem>
+                  <SelectItem value="CANCELLED">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {newStatus === "REJECTED" && (
+              <div>
+                <Label htmlFor="rejectionRemarks">
+                  Rejection Remarks <span className="text-destructive">*</span>
+                </Label>
+                <Textarea
+                  id="rejectionRemarks"
+                  placeholder="Enter reason for rejection..."
+                  value={rejectionRemarks}
+                  onChange={(e) => setRejectionRemarks(e.target.value)}
+                  className="mt-2"
+                  rows={4}
+                />
+              </div>
+            )}
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleStatusChange}>
+            <AlertDialogCancel
+              onClick={() => {
+                setRejectionRemarks("");
+                setStatusChangeOpen(false);
+              }}
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleStatusChange}
+              disabled={newStatus === "REJECTED" && !rejectionRemarks.trim()}
+            >
               Update Status
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Payment Status Change Dialog */}
-      <AlertDialog
-        open={paymentStatusChangeOpen}
-        onOpenChange={setPaymentStatusChangeOpen}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Change Payment Status</AlertDialogTitle>
-            <AlertDialogDescription>
-              Select the new payment status for this reservation.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4">
-            <Select
-              value={newPaymentStatus}
-              onValueChange={(value) =>
-                setNewPaymentStatus(value as PaymentStatus)
-              }
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PENDING">Pending</SelectItem>
-                <SelectItem value="PAID">Paid</SelectItem>
-                <SelectItem value="REFUNDED">Refunded</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handlePaymentStatusChange}>
-              Update Payment Status
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -392,7 +354,6 @@ export const ArchivedReservationsView = ({
                 <TableHead>Time</TableHead>
                 <TableHead>Guests</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Payment</TableHead>
                 <TableHead className="w-[50px]">Actions</TableHead>
               </TableRow>
             </TableHeader>

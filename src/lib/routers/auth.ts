@@ -22,6 +22,13 @@ const signUpSchema = z.object({
 });
 
 export const authRouter = createTRPCRouter({
+  checkApprovalStatus: protectedProcedure.query(async ({ ctx }) => {
+    const user = await prisma.user.findUnique({
+      where: { id: ctx.auth.user.id },
+      select: { isApproved: true },
+    });
+    return { isApproved: user?.isApproved ?? false };
+  }),
   signUp: baseProcedure.input(signUpSchema).mutation(async ({ input }) => {
     // Check if email already exists
     const existingUser = await prisma.user.findUnique({
@@ -71,6 +78,18 @@ export const authRouter = createTRPCRouter({
       password: input.password,
       name: fullName,
     });
+
+    // Update user to set isApproved: false (requires admin approval)
+    const createdUser = await prisma.user.findUnique({
+      where: { email: input.email },
+    });
+
+    if (createdUser) {
+      await prisma.user.update({
+        where: { id: createdUser.id },
+        data: { isApproved: false },
+      });
+    }
 
     // Create resident record
     const resident = await prisma.resident.create({
@@ -482,9 +501,9 @@ export const authRouter = createTRPCRouter({
       metadata?: Record<string, unknown>;
     }> = [];
 
-    // Get monthly dues payments
+    // Get monthly dues payment transactions (individual transactions, not monthly summaries)
     if (headResident) {
-      const monthlyDues = await prisma.monthlyDue.findMany({
+      const paymentTransactions = await prisma.paymentTransaction.findMany({
         where: {
           residentId: headResident.id,
         },
@@ -492,6 +511,12 @@ export const authRouter = createTRPCRouter({
           createdAt: "desc",
         },
         include: {
+          monthlyDue: {
+            select: {
+              month: true,
+              year: true,
+            },
+          },
           resident: {
             select: {
               firstName: true,
@@ -503,7 +528,7 @@ export const authRouter = createTRPCRouter({
         },
       });
 
-      for (const due of monthlyDues) {
+      for (const transaction of paymentTransactions) {
         const monthNames = [
           "January",
           "February",
@@ -518,18 +543,26 @@ export const authRouter = createTRPCRouter({
           "November",
           "December",
         ];
+        const month = transaction.monthlyDue?.month;
+        const year = transaction.monthlyDue?.year;
+        const monthName = month ? monthNames[month - 1] : "Unknown";
+
         transactions.push({
-          id: due.id,
+          id: transaction.id,
           type: "MONTHLY_DUE",
-          date: due.createdAt,
-          amount: due.amountPaid,
-          status: "PAID",
-          description: `Monthly Due Payment - ${monthNames[due.month - 1]} ${due.year}`,
+          date: transaction.createdAt,
+          amount: transaction.amount,
+          status: transaction.status || "PENDING",
+          description: month && year
+            ? `Monthly Due Payment - ${monthName} ${year}`
+            : "Monthly Due Payment",
           metadata: {
-            month: due.month,
-            year: due.year,
-            paymentMethod: due.paymentMethod,
-            residentId: due.residentId,
+            month: month,
+            year: year,
+            paymentMethod: transaction.paymentMethod,
+            proofOfPayment: transaction.proofOfPayment,
+            notes: transaction.notes,
+            residentId: transaction.residentId,
           },
         });
       }
@@ -563,19 +596,8 @@ export const authRouter = createTRPCRouter({
         PARKING_AREA: "Parking Area",
       };
 
-      // Determine the status to display - use paymentStatus if available, otherwise use status
-      let displayStatus: string = reservation.status;
-      if (reservation.paymentStatus === "PAID" && reservation.status === "APPROVED") {
-        displayStatus = "PAID";
-      } else if (reservation.paymentStatus === "PENDING" && reservation.status === "PENDING") {
-        displayStatus = "PENDING";
-      } else if (reservation.status === "APPROVED" && reservation.paymentStatus === "PENDING") {
-        displayStatus = "APPROVED";
-      } else if (reservation.status === "REJECTED") {
-        displayStatus = "REJECTED";
-      } else if (reservation.status === "CANCELLED") {
-        displayStatus = "CANCELLED";
-      }
+      // Use status directly (paymentStatus was removed)
+      const displayStatus: string = reservation.status;
 
       transactions.push({
         id: reservation.id,
@@ -590,7 +612,6 @@ export const authRouter = createTRPCRouter({
           startTime: reservation.startTime,
           endTime: reservation.endTime,
           fullName: reservation.fullName,
-          paymentStatus: reservation.paymentStatus,
           reservationStatus: reservation.status,
         },
       });

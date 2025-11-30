@@ -244,7 +244,6 @@ export const ReservationForm = ({
           amountToPay: calculatedAmount,
           amountPaid: initialData.amountPaid,
           status: initialData.status.toLowerCase() as "pending" | "approved" | "rejected" | "cancelled",
-          paymentStatus: initialData.paymentStatus.toLowerCase() as "pending" | "paid" | "refunded",
           receiptUrl: initialData.receiptUrl ?? undefined,
         });
         onSuccess?.();
@@ -265,7 +264,6 @@ export const ReservationForm = ({
           amountToPay: calculatedAmount,
           amountPaid: calculatedAmount,
           status: "approved",
-          paymentStatus: "paid",
         });
         if (!isEditMode) {
           router.push("/admin/transactions/amenity-reservation");
@@ -289,7 +287,6 @@ export const ReservationForm = ({
           amountToPay: calculatedAmount,
           amountPaid: 0,
           status: "pending",
-          paymentStatus: "pending",
         });
         if (!isEditMode) {
           router.push("/admin/transactions/amenity-reservation");
@@ -499,6 +496,7 @@ export const ReservationForm = ({
                         type="date"
                         disabled={isSubmitting}
                         {...field}
+                        min={new Date().toISOString().split("T")[0]}
                         value={
                           field.value
                             ? new Date(field.value).toISOString().split("T")[0]

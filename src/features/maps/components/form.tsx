@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Heading from "@/components/heading";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -20,7 +21,7 @@ import ImageUpload from "@/components/image-upload";
 import { Maps } from "@prisma/client";
 import { toast } from "sonner";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateMap } from '@/features/maps/hooks/use-maps';
+import { useCreateMap, useUpdateMap } from '@/features/maps/hooks/use-maps';
 import {
   Select,
   SelectContent,
@@ -87,12 +88,13 @@ const formSchema = z.object({
 export const MapForm = ({ initialData }: { initialData: Maps | null }) => {
   const router = useRouter();
   const createMap = useCreateMap();
+  const updateMap = useUpdateMap();
   const title = initialData
-    ? `Edit Lot: ${initialData.lotNo}`
+    ? `Edit ${initialData.availability?.toLowerCase() === "amenity" ? "Amenity" : `Lot: Block ${initialData.blockNo}${initialData.lotNo ? `, Lot ${initialData.lotNo}` : ""}`}`
     : "Create New Lot";
   const description = initialData
-    ? "Edit an existing lot."
-    : "Create a new lot.";
+    ? "Edit an existing lot or amenity."
+    : "Create a new lot or amenity.";
   const action = initialData ? "Save changes" : "Create lot";
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -112,6 +114,17 @@ export const MapForm = ({ initialData }: { initialData: Maps | null }) => {
       notes: initialData?.notes || "",
     },
   });
+
+  // Update form values when initialData changes (for pre-filling block/lot from map click)
+  useEffect(() => {
+    if (initialData && !initialData.id && initialData.blockNo) {
+      // This is a new lot with pre-filled block/lot from map
+      form.setValue("blockNo", initialData.blockNo);
+      if (initialData.lotNo) {
+        form.setValue("lotNo", initialData.lotNo);
+      }
+    }
+  }, [initialData, form]);
 
   const isAmenity = useWatch({
     control: form.control,
@@ -133,18 +146,26 @@ export const MapForm = ({ initialData }: { initialData: Maps | null }) => {
       paymentMethod: data.isAmenity ? "" : (data.paymentMethod || ""),
     };
 
-    if (initialData) {
-      console.log("Update");
+    // Only update if initialData exists AND has a valid id (not empty string)
+    if (initialData && initialData.id) {
+      updateMap.mutate(
+        {
+          id: initialData.id,
+          ...submitData,
+        },
+        {
+          onSuccess: () => {
+            router.push("/admin/maps");
+          },
+        }
+      );
     } else {
+      // Create new lot
       createMap.mutate(
         submitData,
         {
           onSuccess: () => {
-            toast.success("Lot created successfully");
             router.push("/admin/maps");
-          },
-          onError: (error) => {
-            toast.error(`Failed to create lot: ${error.message}`);
           },
         }
       );
@@ -261,13 +282,35 @@ export const MapForm = ({ initialData }: { initialData: Maps | null }) => {
                   <FormLabel>
                     {isAmenity ? "Name" : "Street"} <span className="text-destructive">*</span>
                   </FormLabel>
-                  <FormControl>
-                    <Input
+                  {isAmenity ? (
+                    <FormControl>
+                      <Input
+                        disabled={isSubmitting}
+                        placeholder="e.g. Basketball Court"
+                        {...field}
+                      />
+                    </FormControl>
+                  ) : (
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
                       disabled={isSubmitting}
-                      placeholder={isAmenity ? "e.g. Basketball Court" : "e.g. Main Street"}
-                      {...field}
-                    />
-                  </FormControl>
+                    >
+                      <FormControl>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select street" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="Utah Drive">Utah Drive</SelectItem>
+                        <SelectItem value="San Antonio Drive">San Antonio Drive</SelectItem>
+                        <SelectItem value="Beverly Hills Blvd.">Beverly Hills Blvd.</SelectItem>
+                        <SelectItem value="Los Angeles Blvd.">Los Angeles Blvd.</SelectItem>
+                        <SelectItem value="Dallas Drive">Dallas Drive</SelectItem>
+                        <SelectItem value="Portland Drive">Portland Drive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
                   <FormMessage />
                 </FormItem>
               )}

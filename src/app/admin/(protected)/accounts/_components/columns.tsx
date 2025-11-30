@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 export const columns: ColumnDef<User>[] = [
   {
     accessorKey: "filtered",
+    id: "filtered",
     header: ({ column }) => {
       return (
         <Button
@@ -84,6 +85,7 @@ export const columns: ColumnDef<User>[] = [
   },
   {
     accessorKey: "email",
+    id: "email",
     header: ({ column }) => {
       return (
         <Button
@@ -101,7 +103,8 @@ export const columns: ColumnDef<User>[] = [
     },
   },
   {
-    accessorKey: "selectableFiltered",
+    accessorKey: "role",
+    id: "selectableFiltered",
     header: ({ column }) => {
       return (
         <Button
@@ -128,7 +131,8 @@ export const columns: ColumnDef<User>[] = [
     },
   },
   {
-    accessorKey: "selectableFiltered",
+    accessorKey: "status",
+    id: "status",
     header: ({ column }) => {
       return (
         <Button
@@ -168,19 +172,55 @@ export const columns: ColumnDef<User>[] = [
         </Badge>
       );
     },
-    enableColumnFilter: true,
-    filterFn: (row, id, filterValue) => {
-      // If no filter is set, show all rows
-      if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) {
-        return true;
-      }
-
+    enableColumnFilter: false,
+  },
+  {
+    accessorKey: "isApproved",
+    id: "approval",
+    header: ({ column }) => {
+      return (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Approval
+          <ChevronsUpDown className="h-4 w-4" />
+        </Button>
+      );
+    },
+    cell: ({ row }) => {
+      const isApproved = row.original.isApproved ?? false;
       const role = row.original.role;
-      return filterValue.includes(role);
-    }
+
+      // Admin roles are always considered approved
+      const approved = isApproved || role !== "USER";
+
+      const variants: {
+        label: string;
+        className: string;
+      } = approved
+        ? {
+            label: "Approved",
+            className: "bg-green-100 border border-green-600 text-green-600",
+          }
+        : {
+            label: "Pending",
+            className: "bg-yellow-100 border border-yellow-600 text-yellow-600",
+          };
+
+      return (
+        <Badge
+          variant="default"
+          className={`ml-3.5 capitalize ${variants.className}`}
+        >
+          {variants.label}
+        </Badge>
+      );
+    },
   },
   {
     accessorKey: "date",
+    id: "dateJoined",
     header: ({ column }) => {
       return (
         <Button
@@ -201,6 +241,7 @@ export const columns: ColumnDef<User>[] = [
   },
   {
     accessorKey: "actions",
+    id: "actions",
     header: ({ column }) => {
       return (
         <Button

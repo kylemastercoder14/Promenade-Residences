@@ -7,6 +7,7 @@ import { Role } from "@prisma/client";
 
 export const Client = () => {
   const accounts = useSuspenseAccounts();
+
   return (
     <DataTable
       data={accounts.data}

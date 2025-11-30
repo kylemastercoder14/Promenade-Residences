@@ -35,3 +35,23 @@ export const useCreateMap = () => {
     })
   );
 };
+
+export const useUpdateMap = () => {
+  const queryClient = useQueryClient();
+  const trpc = useTRPC();
+
+  return useMutation(
+    trpc.maps.updateMap.mutationOptions({
+      onSuccess: (data) => {
+        queryClient.invalidateQueries(trpc.maps.getMany.queryOptions());
+        queryClient.invalidateQueries(
+          trpc.maps.getOne.queryOptions({ id: data.id })
+        );
+        toast.success("Lot updated successfully");
+      },
+      onError: (error) => {
+        toast.error(`Failed to update lot: ${error.message}`);
+      },
+    })
+  );
+};

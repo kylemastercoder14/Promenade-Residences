@@ -125,6 +125,7 @@ export function ResidentReservationCalendar({
       </div>
       <CustomCalendar
         value={selectedDate}
+        minValue={today(timeZone)}
         onChange={(date) => {
           if (date) {
             const calendarDate = date as CalendarDate;

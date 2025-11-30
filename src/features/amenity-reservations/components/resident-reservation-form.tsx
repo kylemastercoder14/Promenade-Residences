@@ -252,7 +252,6 @@ export const ResidentReservationForm = () => {
         amountToPay: calculatedAmount,
         amountPaid: 0,
         status: "pending",
-        paymentStatus: "pending",
       });
       form.reset();
       setStep("person");

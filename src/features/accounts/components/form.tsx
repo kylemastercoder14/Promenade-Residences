@@ -22,7 +22,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import ImageUpload from "@/components/image-upload";
 import { authClient } from "@/lib/auth-client";
 import { useState } from "react";
-import { useUpdateAccount, useUpdateRole } from "@/features/accounts/hooks/use-accounts";
+import { useUpdateAccount, useUpdateRole, useApproveOrRejectAccount } from "@/features/accounts/hooks/use-accounts";
 import { User } from "@/lib/auth";
 import { toast } from "sonner";
 
@@ -38,6 +38,7 @@ export const AccountForm = ({ initialData }: { initialData: User | null }) => {
   const router = useRouter();
   const updateRole = useUpdateRole();
   const updateAccount = useUpdateAccount();
+  const approveOrReject = useApproveOrRejectAccount();
   const title = initialData
     ? `Edit Account: ${initialData.email}`
     : "Create New Account";
@@ -94,7 +95,23 @@ export const AccountForm = ({ initialData }: { initialData: User | null }) => {
               },
               {
                 onSuccess: () => {
-                  router.push("/admin/accounts");
+                  // Auto-approve accounts created by admins
+                  approveOrReject.mutate(
+                    {
+                      id: newUserId,
+                      isApproved: true,
+                    },
+                    {
+                      onSuccess: () => {
+                        toast.success("Account created and approved successfully");
+                        router.push("/admin/accounts");
+                      },
+                      onError: (error) => {
+                        toast.error(`Account created but failed to approve: ${error.message}`);
+                        router.push("/admin/accounts");
+                      },
+                    }
+                  );
                 },
                 onError: (error) => {
                   toast.error(`Failed to update role: ${error.message}`);

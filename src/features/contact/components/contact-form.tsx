@@ -79,7 +79,7 @@ export const ContactForm = ({
               <FormItem>
                 <FormLabel>Full name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Enter your full name" {...field} />
+                  <Input placeholder="Last Name, First Name MI." {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

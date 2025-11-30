@@ -13,10 +13,12 @@ const Page = async () => {
 
   return (
     <div>
-      <Heading
-        title="Monthly Dues"
-        description="Manage monthly due payments for residents and tenants"
-      />
+      <div className="flex items-center justify-between">
+        <Heading
+          title="Monthly Dues"
+          description="Manage monthly due payments for residents and tenants"
+        />
+      </div>
       <div className="mt-5">
         <HydrateClient>
           <ErrorBoundary

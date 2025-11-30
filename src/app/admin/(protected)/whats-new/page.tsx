@@ -20,12 +20,14 @@ const Page = async () => {
           title="What's New"
           description="Manage and create What's New items"
         />
-        <Button asChild variant="primary" size="sm">
-          <Link href="/admin/whats-new/create">
-            <PlusIcon className="size-4" />
-            Create Item
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="primary" size="sm">
+            <Link href="/admin/whats-new/create">
+              <PlusIcon className="size-4" />
+              Create Item
+            </Link>
+          </Button>
+        </div>
       </div>
       <div className="mt-5">
         <HydrateClient>

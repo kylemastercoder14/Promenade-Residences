@@ -12,7 +12,7 @@ import { Role } from "@prisma/client";
 const Page = async () => {
   await requireAuth({ roles: [Role.SUPERADMIN] });
   prefetchLogs();
-  return (
+	return (
 	<div>
 	  <div className="flex items-center justify-between">
 		<Heading

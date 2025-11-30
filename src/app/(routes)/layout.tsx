@@ -18,7 +18,8 @@ const PUBLIC_ROUTES = [
   "/general-policy",
   "/hoa-contract",
   "/privacy-policy",
-  "/amenities-reservation"
+  "/amenities-reservation",
+  "/lot-availabilities",
 ];
 
 const Layout = ({ children }: { children: React.ReactNode }) => {

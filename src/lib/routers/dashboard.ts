@@ -3,7 +3,46 @@ import prisma from "@/lib/db";
 import z from "zod";
 
 export const dashboardRouter = createTRPCRouter({
-  getStatistics: protectedProcedure.query(async () => {
+  getStatistics: protectedProcedure
+    .input(
+      z.object({
+        period: z.enum(["daily", "weekly", "monthly", "annually"]).default("monthly"),
+      }).optional()
+    )
+    .query(async ({ input }) => {
+      const period = input?.period ?? "monthly";
+      const now = new Date();
+
+      // Calculate date range based on period
+      let startDate: Date;
+      let endDate: Date = new Date(now);
+
+      switch (period) {
+        case "daily":
+          startDate = new Date(now);
+          startDate.setHours(0, 0, 0, 0);
+          endDate.setHours(23, 59, 59, 999);
+          break;
+        case "weekly":
+          startDate = new Date(now);
+          startDate.setDate(now.getDate() - now.getDay()); // Start of week (Sunday)
+          startDate.setHours(0, 0, 0, 0);
+          endDate.setHours(23, 59, 59, 999);
+          break;
+        case "monthly":
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          startDate.setHours(0, 0, 0, 0);
+          endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          endDate.setHours(23, 59, 59, 999);
+          break;
+        case "annually":
+          startDate = new Date(now.getFullYear(), 0, 1);
+          startDate.setHours(0, 0, 0, 0);
+          endDate = new Date(now.getFullYear(), 11, 31);
+          endDate.setHours(23, 59, 59, 999);
+          break;
+      }
+
     try {
     // Get total accounts (users)
     const totalAccounts = await prisma.user.count({
@@ -59,28 +98,29 @@ export const dashboardRouter = createTRPCRouter({
       },
     });
 
-    // Get monthly dues statistics for current month
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth() + 1;
-    const currentYear = currentDate.getFullYear();
-
-    const monthlyDuesThisMonth = await prisma.monthlyDue.findMany({
+    // Get monthly dues statistics filtered by period
+    const monthlyDuesInPeriod = await prisma.monthlyDue.findMany({
       where: {
-        month: currentMonth,
-        year: currentYear,
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
       },
     });
 
-    const totalMonthlyDues = monthlyDuesThisMonth.length;
-    const approvedMonthlyDues = monthlyDuesThisMonth.filter(
+    const totalMonthlyDues = monthlyDuesInPeriod.length;
+    const approvedMonthlyDues = monthlyDuesInPeriod.filter(
       (due) => due.status === "APPROVED"
     ).length;
     const pendingMonthlyDues = totalMonthlyDues - approvedMonthlyDues;
 
-    // Get all monthly dues for current year for revenue calculation (to match collection chart)
-    const monthlyDuesThisYear = await prisma.monthlyDue.findMany({
+    // Get all monthly dues for revenue calculation filtered by period
+    const monthlyDuesForRevenue = await prisma.monthlyDue.findMany({
       where: {
-        year: currentYear,
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
         status: "APPROVED",
       },
     });
@@ -98,10 +138,14 @@ export const dashboardRouter = createTRPCRouter({
     ).length;
     const ownedLots = Math.max(0, totalLots - availableLots);
 
-    // Get amenity reservations statistics
+    // Get amenity reservations statistics filtered by period
     const totalReservations = await prisma.amenityReservation.count({
       where: {
         isArchived: false,
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
       },
     });
 
@@ -109,17 +153,27 @@ export const dashboardRouter = createTRPCRouter({
       by: ["status"],
       where: {
         isArchived: false,
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
       },
       _count: {
         status: true,
       },
     });
 
-    // Get recent transactions (last 5)
+    // Get recent transactions (last 5) filtered by period
     const recentMonthlyDues = await prisma.monthlyDue.findMany({
       take: 5,
       orderBy: {
         createdAt: "desc",
+      },
+      where: {
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
       },
       include: {
         resident: {
@@ -138,6 +192,10 @@ export const dashboardRouter = createTRPCRouter({
       },
       where: {
         isArchived: false,
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
       },
     });
 
@@ -150,18 +208,21 @@ export const dashboardRouter = createTRPCRouter({
       },
     });
 
-    // Calculate total revenue from monthly dues (current year to match collection chart)
-    const monthlyDuesRevenue = monthlyDuesThisYear.reduce(
+    // Calculate total revenue from monthly dues filtered by period
+    const monthlyDuesRevenue = monthlyDuesForRevenue.reduce(
       (sum, due) => sum + due.amountPaid,
       0
     );
 
-    // Calculate total revenue from amenity reservations (paid)
+    // Calculate total revenue from amenity reservations (approved) filtered by period
     const reservationsRevenue = await prisma.amenityReservation.aggregate({
       where: {
         isArchived: false,
         status: "APPROVED",
-        paymentStatus: "PAID",
+        createdAt: {
+          gte: startDate,
+          lte: endDate,
+        },
       },
       _sum: {
         amountPaid: true,
@@ -233,6 +294,11 @@ export const dashboardRouter = createTRPCRouter({
       },
       recentMonthlyDues,
       recentReservations,
+      period,
+      periodRange: {
+        start: startDate,
+        end: endDate,
+      },
     };
     } catch (error) {
       console.error("Dashboard statistics error:", error);
@@ -256,7 +322,7 @@ export const dashboardRouter = createTRPCRouter({
       const reservations = await prisma.amenityReservation.findMany({
         where: {
           isArchived: false,
-          paymentStatus: "PAID",
+          status: "APPROVED",
           date: {
             gte: new Date(input.year, 0, 1),
             lt: new Date(input.year + 1, 0, 1),

@@ -22,12 +22,14 @@ const Page = async () => {
           title="Residents"
           description="Manage residents and tenants, view details, and handle archiving."
         />
-        <Button asChild variant="primary" size="sm">
-          <Link href="/admin/residents/create">
-            <PlusIcon className="size-4" />
-            Add Resident
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="primary" size="sm">
+            <Link href="/admin/residents/create">
+              <PlusIcon className="size-4" />
+              Add Resident
+            </Link>
+          </Button>
+        </div>
       </div>
       <div className="mt-5">
         <HydrateClient>

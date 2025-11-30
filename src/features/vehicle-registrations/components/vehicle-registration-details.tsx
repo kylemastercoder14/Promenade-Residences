@@ -186,14 +186,6 @@ export const VehicleRegistrationDetails = ({
                 <p className="text-sm text-muted-foreground">Vehicle Type</p>
                 <Badge variant="secondary">{formatVehicleType(vehicle.vehicleType)}</Badge>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Chassis Number</p>
-                <p className="font-semibold">{vehicle.chassisNumber}</p>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Engine Number</p>
-                <p className="font-semibold">{vehicle.engineNumber}</p>
-              </div>
             </div>
           </CardContent>
         </Card>

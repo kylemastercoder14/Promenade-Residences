@@ -126,7 +126,7 @@ export const LotDetailsDialog = ({ open, onOpenChange, lotDetails, isLoading, bl
               {displayLotNo && `, Lot ${displayLotNo}`}
             </DialogTitle>
             <DialogDescription>
-              {lotDetails?.street || "Lot information"}
+              Lot information
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">

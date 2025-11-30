@@ -81,7 +81,8 @@ export const LoginForm = () => {
       if (userRole === Role.USER) {
         try {
           // Check approval status using TRPC
-          const approvalStatus = await trpc.auth.checkApprovalStatus.query();
+          const queryOptions = trpc.auth.checkApprovalStatus.queryOptions();
+          const approvalStatus = await queryOptions.queryFn();
 
           if (!approvalStatus.isApproved) {
             toast.error("Your account is pending approval. Please wait for an administrator to approve your account.");

@@ -34,7 +34,7 @@ export const accountsRouter = createTRPCRouter({
       const user = await prisma.user.findUnique({ where: { id: input.id } });
 
       // Auto-approve if role is admin (SUPERADMIN, ADMIN, or ACCOUNTING)
-      const isAdminRole = [Role.SUPERADMIN, Role.ADMIN, Role.ACCOUNTING].includes(input.role);
+      const isAdminRole = (input.role === Role.SUPERADMIN || input.role === Role.ADMIN || input.role === Role.ACCOUNTING);
 
       const result = await prisma.user.update({
         where: { id: input.id },

@@ -21,6 +21,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Role } from "@prisma/client";
 import { useTRPC } from "@/trpc/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 const formSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -45,6 +46,7 @@ const getRedirectUrl = (role: string | undefined): string => {
 export const LoginForm = () => {
   const router = useRouter();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     defaultValues: {
@@ -82,16 +84,14 @@ export const LoginForm = () => {
         try {
           // Check approval status using TRPC
           const queryOptions = trpc.auth.checkApprovalStatus.queryOptions();
-          if (queryOptions.queryFn) {
-            const approvalStatus = await queryOptions.queryFn();
+          const approvalStatus = await queryClient.fetchQuery(queryOptions);
 
-            if (!approvalStatus.isApproved) {
-              toast.error("Your account is pending approval. Please wait for an administrator to approve your account.");
-              setIsSubmitting(false);
-              // Sign out the user
-              await authClient.signOut();
-              return;
-            }
+          if (!approvalStatus.isApproved) {
+            toast.error("Your account is pending approval. Please wait for an administrator to approve your account.");
+            setIsSubmitting(false);
+            // Sign out the user
+            await authClient.signOut();
+            return;
           }
         } catch (error) {
           // If check fails, allow login but will be checked in protected routes

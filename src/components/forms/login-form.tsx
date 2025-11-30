@@ -82,14 +82,16 @@ export const LoginForm = () => {
         try {
           // Check approval status using TRPC
           const queryOptions = trpc.auth.checkApprovalStatus.queryOptions();
-          const approvalStatus = await queryOptions.queryFn();
+          if (queryOptions.queryFn) {
+            const approvalStatus = await queryOptions.queryFn();
 
-          if (!approvalStatus.isApproved) {
-            toast.error("Your account is pending approval. Please wait for an administrator to approve your account.");
-            setIsSubmitting(false);
-            // Sign out the user
-            await authClient.signOut();
-            return;
+            if (!approvalStatus.isApproved) {
+              toast.error("Your account is pending approval. Please wait for an administrator to approve your account.");
+              setIsSubmitting(false);
+              // Sign out the user
+              await authClient.signOut();
+              return;
+            }
           }
         } catch (error) {
           // If check fails, allow login but will be checked in protected routes

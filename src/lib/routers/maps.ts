@@ -66,7 +66,6 @@ export const mapsRouter = createTRPCRouter({
         return [];
       }
 
-      const q = raw.toLowerCase();
       const numeric = raw.replace(/\D/g, "");
 
       const results = await prisma.maps.findMany({
@@ -78,7 +77,6 @@ export const mapsRouter = createTRPCRouter({
                   {
                     blockNo: {
                       contains: numeric,
-                      mode: "insensitive",
                     },
                   },
                 ]
@@ -89,7 +87,6 @@ export const mapsRouter = createTRPCRouter({
                   {
                     lotNo: {
                       contains: numeric,
-                      mode: "insensitive",
                     },
                   },
                 ]
@@ -97,7 +94,7 @@ export const mapsRouter = createTRPCRouter({
             // Match street name by text
             {
               street: {
-                contains: q,
+                contains: raw,
                 mode: "insensitive",
               },
             },

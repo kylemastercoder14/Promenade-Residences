@@ -1,12 +1,15 @@
 "use client";
 
+import { useState } from "react";
 import { Navbar } from "@/components/navbar";
 import { LandingFooter } from "@/components/landing/footer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Info } from "lucide-react";
+import { Info, MapPin } from "lucide-react";
 import { InteractiveMap } from "@/components/interactive-map";
+import { useTRPC } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
 
 // Legend items reflect the status/availability used in the mapping data
 const legend = [
@@ -16,6 +19,24 @@ const legend = [
 ];
 
 const LotAvailabilities = () => {
+  const trpc = useTRPC();
+  const [searchInput, setSearchInput] = useState("");
+  const [searchTerm, setSearchTerm] = useState<string | null>(null);
+
+  const { data: searchResults = [], isLoading: isSearching } = useQuery(
+    trpc.maps.searchPublic.queryOptions(
+      { query: searchTerm ?? "" },
+      {
+        enabled: !!searchTerm && searchTerm.trim().length > 0,
+      }
+    )
+  );
+
+  const handleSearch = () => {
+    const trimmed = searchInput.trim();
+    setSearchTerm(trimmed.length ? trimmed : null);
+  };
+
   return (
     <div className="min-h-screen bg-[#f6f5f2] text-[#1c2a1d]">
       <Navbar variant="community" />
@@ -35,15 +56,86 @@ const LotAvailabilities = () => {
               </div>
 
               <div className="flex flex-wrap gap-3">
-                <Input placeholder="Search lot / block / street…" className="flex-1 bg-[#f4f7f0]" />
-                <Button className="rounded-full bg-[#1f5c34] px-6 text-white hover:bg-[#174328]">Search</Button>
+                <Input
+                  placeholder="Search lot / block / street…"
+                  className="flex-1 bg-[#f4f7f0]"
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleSearch();
+                    }
+                  }}
+                />
+                <Button
+                  className="rounded-full bg-[#1f5c34] px-6 text-white hover:bg-[#174328]"
+                  type="button"
+                  onClick={handleSearch}
+                >
+                  Search
+                </Button>
               </div>
 
-              <div className="flex flex-wrap items-start gap-3 rounded-2xl border border-[#e4e7de] bg-[#f9faf7] p-4">
-                <div className="flex items-center gap-2 text-sm text-[#4f5f53]">
-                  <Info className="size-4 text-[#1f5c34]" />
-                  Click on any lot to view details. Use mouse wheel to zoom, drag to pan, or use the controls on the map.
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-wrap items-start gap-3 rounded-2xl border border-[#e4e7de] bg-[#f9faf7] p-4">
+                  <div className="flex items-center gap-2 text-sm text-[#4f5f53]">
+                    <Info className="size-4 text-[#1f5c34]" />
+                    Click on any lot to view details. Use mouse wheel to zoom, drag to pan, or use the controls on the map.
+                  </div>
                 </div>
+
+                {/* Search results summary */}
+                {searchTerm && (
+                  <div className="rounded-2xl border border-[#e4e7de] bg-white p-4 space-y-3">
+                    <p className="text-sm font-semibold text-[#1c2a1d]">
+                      Search results for <span className="font-mono">“{searchTerm}”</span>
+                    </p>
+                    {isSearching ? (
+                      <p className="text-sm text-[#4f5f53]">Searching lots…</p>
+                    ) : searchResults.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">
+                        No lots found matching your search. Try a different block, lot, or street.
+                      </p>
+                    ) : (
+                      <div className="max-h-64 space-y-3 overflow-y-auto pr-1">
+                        {searchResults.map((lot) => (
+                          <div
+                            key={lot.id}
+                            className="rounded-xl border border-[#e4e7de] bg-[#f9faf7] p-3 text-sm space-y-1"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2">
+                                <MapPin className="size-4 text-[#1f5c34]" />
+                                <p className="font-semibold text-[#1c2a1d]">
+                                  Block {lot.blockNo}
+                                  {lot.lotNo && `, Lot ${lot.lotNo}`}
+                                </p>
+                              </div>
+                              <span className="text-xs rounded-full bg-[#e7f3eb] px-2 py-0.5 text-[#1f5c34] capitalize">
+                                {lot.availability.toLowerCase()}
+                              </span>
+                            </div>
+                            <p className="text-xs text-[#4f5f53]">{lot.street}</p>
+                            <div className="flex flex-wrap gap-3 text-xs text-[#4f5f53]">
+                              {lot.lotSize > 0 && (
+                                <span>Lot size: {lot.lotSize} sqm</span>
+                              )}
+                              {lot.houseType && <span>Type: {lot.houseType}</span>}
+                              {lot.minPrice > 0 && (
+                                <span>
+                                  Price: ₱{lot.minPrice.toLocaleString()}
+                                  {lot.maxPrice > lot.minPrice &&
+                                    `–₱${lot.maxPrice.toLocaleString()}`}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="rounded-[28px] border border-[#e4e7de] bg-linear-to-br from-white to-[#f3f5ef] p-4 shadow-inner">

@@ -9,6 +9,19 @@ import {
   createLogDescription,
 } from "@/lib/system-log";
 
+// Helper: store amenity reservation dates in a timezone-safe way.
+// We normalise to a fixed UTC noon so that when converted back to local time,
+// the calendar date remains stable across common timezones and avoids off‑by‑one issues.
+const toUtcNoon = (date: Date) =>
+  new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0, 0));
+
+// Helper: get UTC day range [start, nextDay) for a given local Date
+const getUtcDayRange = (date: Date) => {
+  const start = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0));
+  const nextDay = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate() + 1, 0, 0, 0, 0));
+  return { start, nextDay };
+};
+
 const amenityReservationSchema = z.object({
   id: z.string().optional(),
   userType: z.enum(["resident", "tenant", "visitor"]),
@@ -189,11 +202,8 @@ export const amenityReservationsRouter = createTRPCRouter({
 
       // Check for overlapping reservations for the same amenity/date
       // Only check APPROVED and PENDING statuses (REJECTED and CANCELLED don't block bookings)
-      // Normalize date to start of day for comparison (UTC)
-      const inputDate = new Date(input.date);
-      inputDate.setUTCHours(0, 0, 0, 0);
-      const nextDay = new Date(inputDate);
-      nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+      // Normalize date range for comparison (UTC, day-boundary)
+      const { start: inputDate, nextDay } = getUtcDayRange(input.date);
 
       const sameDayReservations = await prisma.amenityReservation.findMany({
         where: {
@@ -242,9 +252,8 @@ export const amenityReservationsRouter = createTRPCRouter({
         });
       }
 
-      // Normalize date to start of day for storage (UTC)
-      const normalizedDate = new Date(input.date);
-      normalizedDate.setUTCHours(0, 0, 0, 0);
+      // Normalize date for storage (UTC noon to avoid timezone date shifts)
+      const normalizedDate = toUtcNoon(input.date);
 
       const reservation = await prisma.amenityReservation.create({
         data: {
@@ -307,11 +316,8 @@ export const amenityReservationsRouter = createTRPCRouter({
 
       // Check for overlapping reservations for the same amenity/date (including walk-ins)
       // Only check APPROVED and PENDING statuses (REJECTED and CANCELLED don't block bookings)
-      // Normalize date to start of day for comparison (UTC)
-      const inputDate = new Date(input.date);
-      inputDate.setUTCHours(0, 0, 0, 0);
-      const nextDay = new Date(inputDate);
-      nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+      // Normalize date range for comparison (UTC, day-boundary)
+      const { start: inputDate, nextDay } = getUtcDayRange(input.date);
 
       const sameDayReservations = await prisma.amenityReservation.findMany({
         where: {
@@ -366,9 +372,8 @@ export const amenityReservationsRouter = createTRPCRouter({
         "visitor": "VISITOR",
       };
 
-      // Normalize date to start of day for storage (UTC)
-      const normalizedDate = new Date(input.date);
-      normalizedDate.setUTCHours(0, 0, 0, 0);
+      // Normalize date for storage (UTC noon to avoid timezone date shifts)
+      const normalizedDate = toUtcNoon(input.date);
 
       // For walk-in: status = Approved, amountPaid = amountToPay, generate receipt
       const reservation = await prisma.amenityReservation.create({
@@ -446,11 +451,8 @@ export const amenityReservationsRouter = createTRPCRouter({
 
       // Check for overlapping reservations when updating (excluding current)
       // Only check APPROVED and PENDING statuses (REJECTED and CANCELLED don't block bookings)
-      // Normalize date to start of day for comparison (UTC)
-      const inputDate = new Date(input.date);
-      inputDate.setUTCHours(0, 0, 0, 0);
-      const nextDay = new Date(inputDate);
-      nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+      // Normalize date range for comparison (UTC, day-boundary)
+      const { start: inputDate, nextDay } = getUtcDayRange(input.date);
 
       const sameDayReservations = await prisma.amenityReservation.findMany({
         where: {
@@ -502,9 +504,8 @@ export const amenityReservationsRouter = createTRPCRouter({
         });
       }
 
-      // Normalize date to start of day for storage (UTC)
-      const normalizedDate = new Date(input.date);
-      normalizedDate.setUTCHours(0, 0, 0, 0);
+      // Normalize date for storage (UTC noon to avoid timezone date shifts)
+      const normalizedDate = toUtcNoon(input.date);
 
       const result = await prisma.amenityReservation.update({
         where: {

@@ -51,6 +51,79 @@ export const mapsRouter = createTRPCRouter({
       });
       return map;
     }),
+
+  // Public search endpoint for lot availabilities page.
+  // Allows residents to search lots by block number, lot number, or street name.
+  searchPublic: baseProcedure
+    .input(
+      z.object({
+        query: z.string().min(1, "Search text is required"),
+      })
+    )
+    .query(async ({ input }) => {
+      const raw = input.query.trim();
+      if (!raw) {
+        return [];
+      }
+
+      const q = raw.toLowerCase();
+      const numeric = raw.replace(/\D/g, "");
+
+      const results = await prisma.maps.findMany({
+        where: {
+          OR: [
+            // Match block numbers containing the numeric part (e.g. "3" → BLK3)
+            ...(numeric
+              ? [
+                  {
+                    blockNo: {
+                      contains: numeric,
+                      mode: "insensitive",
+                    },
+                  },
+                ]
+              : []),
+            // Match lot numbers if numeric portion is present
+            ...(numeric
+              ? [
+                  {
+                    lotNo: {
+                      contains: numeric,
+                      mode: "insensitive",
+                    },
+                  },
+                ]
+              : []),
+            // Match street name by text
+            {
+              street: {
+                contains: q,
+                mode: "insensitive",
+              },
+            },
+          ],
+        },
+        orderBy: [
+          { blockNo: "asc" },
+          { lotNo: "asc" },
+        ],
+        take: 50,
+        select: {
+          id: true,
+          blockNo: true,
+          lotNo: true,
+          street: true,
+          lotSize: true,
+          houseType: true,
+          minPrice: true,
+          maxPrice: true,
+          paymentMethod: true,
+          availability: true,
+        },
+      });
+
+      return results;
+    }),
   getMany: protectedProcedure.query(() => {
     return prisma.maps.findMany();
   }),

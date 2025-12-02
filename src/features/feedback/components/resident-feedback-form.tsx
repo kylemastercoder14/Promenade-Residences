@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { useCreateFeedback } from "../hooks/use-feedback";
+import { authClient } from "@/lib/auth-client";
 
 const FEEDBACK_CATEGORIES = [
   "GENERAL",
@@ -38,12 +40,10 @@ const feedbackSchema = z.object({
     .email("Enter a valid email")
     .optional()
     .or(z.literal("")),
+  // Require PH-format number: +63 followed by exactly 10 digits (e.g., +639152479693)
   contactNumber: z
     .string()
-    .min(7, "Enter at least 7 digits")
-    .max(20, "Contact number is too long")
-    .optional()
-    .or(z.literal("")),
+    .regex(/^\+63\d{10}$/, "Contact number must be in the format +63XXXXXXXXXX (10 digits after +63)"),
   subject: z.string().min(5, "Subject is required").max(120),
   category: z.enum(FEEDBACK_CATEGORIES),
   message: z.string().min(20, "Please provide more details").max(1500),
@@ -74,7 +74,8 @@ export const ResidentFeedbackForm = ({ onSuccess, variant = "default" }: Residen
     defaultValues: {
       residentName: "",
       contactEmail: "",
-      contactNumber: "",
+      // Start with PH country code; user will fill the remaining 10 digits
+      contactNumber: "+63",
       subject: "",
       category: "GENERAL" as FeedbackCategoryValue,
       rating: undefined,
@@ -84,6 +85,36 @@ export const ResidentFeedbackForm = ({ onSuccess, variant = "default" }: Residen
   });
 
   const createFeedback = useCreateFeedback();
+
+  // If the user is logged in, auto-fill basic identity fields so they don't have to re-type them.
+  useEffect(() => {
+    let isMounted = true;
+
+    const hydrateFromSession = async () => {
+      try {
+        const session = await authClient.getSession();
+        const user = session?.data?.user;
+        if (!user || !isMounted) return;
+
+        const currentValues = form.getValues();
+
+        form.reset({
+          ...currentValues,
+          residentName: currentValues.residentName || user.name || "",
+          contactEmail: currentValues.contactEmail || user.email || "",
+        });
+      } catch (err) {
+        // Silent fail – feedback form should still work for guests.
+        console.error("Failed to hydrate feedback form from session", err);
+      }
+    };
+
+    void hydrateFromSession();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [form]);
 
   const onSubmit: SubmitHandler<FeedbackFormValues> = async (values) => {
     try {
@@ -154,8 +185,34 @@ export const ResidentFeedbackForm = ({ onSuccess, variant = "default" }: Residen
                 <FormItem>
                   <FormLabel>Contact Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="+63 900 000 0000" {...field} />
+                    <Input
+                      placeholder="+639XXXXXXXXX"
+                      value={field.value}
+                      onChange={(event) => {
+                        // Always enforce "+63" prefix and allow only 10 numeric digits after it
+                        const raw = event.target.value;
+                        // Strip everything except digits
+                        let digits = raw.replace(/\D/g, "");
+
+                        // Ensure we start with country code 63
+                        if (digits.startsWith("0")) {
+                          // Convert local 0XXXXXXXXXX into 63XXXXXXXXXX
+                          digits = "63" + digits.slice(1);
+                        } else if (!digits.startsWith("63")) {
+                          digits = "63" + digits;
+                        }
+
+                        // Extract the 10 subscriber digits after "63"
+                        const subscriber = digits.slice(2, 12); // max 10 digits
+
+                        const formatted = "+63" + subscriber;
+                        field.onChange(formatted);
+                      }}
+                    />
                   </FormControl>
+                  <FormDescription>
+                    Format: <span className="font-mono">+63</span> followed by 10 digits (e.g. <span className="font-mono">+639152479693</span>).
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}

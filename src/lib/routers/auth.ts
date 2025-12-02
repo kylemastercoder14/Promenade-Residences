@@ -64,8 +64,14 @@ export const authRouter = createTRPCRouter({
           maxPrice: 0,
           paymentMethod: "Cash",
           attachmentUrl: "",
-          availability: "Available",
+          availability: "Occupied", // Newly created lot is immediately occupied by this resident
         },
+      });
+    } else if (map.availability.toLowerCase() === "available") {
+      // When a resident signs up on an existing available lot, mark it as occupied
+      map = await prisma.maps.update({
+        where: { id: map.id },
+        data: { availability: "Occupied" },
       });
     }
 
@@ -225,8 +231,14 @@ export const authRouter = createTRPCRouter({
             maxPrice: 0,
             paymentMethod: "Cash",
             attachmentUrl: "",
-            availability: "Available",
+            availability: "Occupied",
           },
+        });
+      } else if (map.availability.toLowerCase() === "available") {
+        // Completing profile on an existing available lot should also mark it as occupied
+        map = await prisma.maps.update({
+          where: { id: map.id },
+          data: { availability: "Occupied" },
         });
       }
 
@@ -613,6 +625,9 @@ export const authRouter = createTRPCRouter({
           endTime: reservation.endTime,
           fullName: reservation.fullName,
           reservationStatus: reservation.status,
+          rejectionRemarks: reservation.rejectionRemarks,
+          paymentMethod: reservation.paymentMethod,
+          proofOfPayment: reservation.proofOfPayment,
         },
       });
     }

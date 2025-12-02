@@ -179,7 +179,34 @@ const Page = () => {
                                     )}
                                     {transaction.metadata.startTime && transaction.metadata.endTime && (
                                       <p>
-                                        Time: {String(transaction.metadata.startTime ?? "")} - {String(transaction.metadata.endTime ?? "")}
+                                        Time: {String(transaction.metadata.startTime ?? "")} -{" "}
+                                        {String(transaction.metadata.endTime ?? "")}
+                                      </p>
+                                    )}
+                                    {transaction.metadata.paymentMethod && (
+                                      <p>
+                                        Payment Method:{" "}
+                                        {String(transaction.metadata.paymentMethod)}
+                                      </p>
+                                    )}
+                                    {transaction.metadata.proofOfPayment && (
+                                      <p>
+                                        <a
+                                          href={String(transaction.metadata.proofOfPayment)}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-[#1f5c34] hover:underline"
+                                        >
+                                          View Proof of Payment
+                                        </a>
+                                      </p>
+                                    )}
+                                    {transaction.metadata.rejectionRemarks && (
+                                      <p>
+                                        Remarks:{" "}
+                                        <span className="font-medium text-red-700">
+                                          {String(transaction.metadata.rejectionRemarks)}
+                                        </span>
                                       </p>
                                     )}
                                   </>

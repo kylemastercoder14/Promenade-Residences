@@ -32,6 +32,7 @@ import { PaymentMethod, MonthlyDueStatus } from "@prisma/client";
 const MONTHLY_DUE_AMOUNT = 750;
 
 // Create a function to generate the schema with dynamic validation
+// Advance payments are now disabled: any excess over the computed balance is rejected.
 const createPaymentFormSchema = (totalBalance: number) =>
   z
     .object({
@@ -42,20 +43,17 @@ const createPaymentFormSchema = (totalBalance: number) =>
       paymentMethod: z.enum(PaymentMethod).optional(),
       notes: z.string().optional(),
       attachment: z.string().optional(),
-      applyAdvance: z.boolean(),
+      applyAdvance: z.boolean().default(false),
     })
     .refine(
       (data) => {
         const excessAmount = data.amountPaid > totalBalance ? data.amountPaid - totalBalance : 0;
-        // If there's an excess amount, applyAdvance must be true
-        if (excessAmount > 0) {
-          return data.applyAdvance === true;
-        }
-        return true;
+        // Any excess amount is now disallowed (no advance payment option)
+        return excessAmount <= 0;
       },
       {
-        message: "You must enable 'Apply Advance Payment' to submit an excess payment.",
-        path: ["applyAdvance"], // This will show the error on the applyAdvance field
+        message: "Payment exceeds the outstanding balance. Advance payments are no longer allowed.",
+        path: ["amountPaid"],
       }
     );
 
@@ -142,6 +140,7 @@ export const PaymentForm = ({
           }
         }
 
+        // Any remainingAmount here would represent an excess, which is already blocked by validation.
         // Use batch payment mutation
         await createBatchPayment.mutateAsync({
           residentId,
@@ -150,7 +149,7 @@ export const PaymentForm = ({
           paymentMethod: data.paymentMethod,
           notes: data.notes ? `${data.notes} (Multi-month payment)` : "Multi-month payment",
           attachment: data.attachment,
-          applyAdvance: data.applyAdvance && remainingAmount > 0,
+          applyAdvance: false,
         });
       } else if (month && monthData) {
         // Single month payment
@@ -162,7 +161,7 @@ export const PaymentForm = ({
           paymentMethod: data.paymentMethod,
           notes: data.notes,
           attachment: data.attachment,
-          applyAdvance: data.applyAdvance,
+          applyAdvance: false,
         });
       }
       onSuccess();
@@ -216,8 +215,8 @@ export const PaymentForm = ({
                   <span className="text-destructive">₱{totalBalance.toFixed(2)}</span>
                 </div>
                 {excessAmount > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Excess Amount:</span>
+                  <div className="flex justify-between text-red-600">
+                    <span>Excess Amount (not allowed):</span>
                     <span className="font-semibold">₱{excessAmount.toFixed(2)}</span>
                   </div>
                 )}
@@ -245,8 +244,8 @@ export const PaymentForm = ({
                   </div>
                 )}
                 {excessAmount > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Excess Amount:</span>
+                  <div className="flex justify-between text-red-600">
+                    <span>Excess Amount (not allowed):</span>
                     <span className="font-semibold">₱{excessAmount.toFixed(2)}</span>
                   </div>
                 )}
@@ -277,7 +276,7 @@ export const PaymentForm = ({
                         ? `This will fully pay all ${monthsData?.length || 0} selected months.`
                         : "This will fully pay the remaining balance."
                       : excessAmount > 0
-                        ? `This payment exceeds the balance by ₱${excessAmount.toFixed(2)}. You must enable 'Apply Advance Payment' to submit this excess amount.`
+                        ? `This payment exceeds the balance by ₱${excessAmount.toFixed(2)}. Please adjust the amount to match the outstanding balance.`
                         : isMultiMonth
                           ? `Enter the total payment amount for ${monthsData?.length || 0} months.`
                           : "Enter the payment amount."}
@@ -325,31 +324,7 @@ export const PaymentForm = ({
               )}
             />
 
-            {excessAmount > 0 && (
-              <FormField
-                control={form.control}
-                name="applyAdvance"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel>
-                        Apply Advance Payment <span className="text-destructive">*</span>
-                      </FormLabel>
-                      <FormDescription>
-                        You must enable this option to apply the excess amount (₱{excessAmount.toFixed(2)}) to next month&apos;s payment
-                      </FormDescription>
-                      <FormMessage />
-                    </div>
-                  </FormItem>
-                )}
-              />
-            )}
+            {/* Advance payment is disabled; we only show the excess warning above. */}
 
             <FormField
               control={form.control}

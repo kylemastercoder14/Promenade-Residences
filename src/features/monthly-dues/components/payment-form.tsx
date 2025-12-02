@@ -43,7 +43,9 @@ const createPaymentFormSchema = (totalBalance: number) =>
       paymentMethod: z.enum(PaymentMethod).optional(),
       notes: z.string().optional(),
       attachment: z.string().optional(),
-      applyAdvance: z.boolean().default(false),
+      // Keep applyAdvance as a required boolean in the schema to satisfy React Hook Form's type expectations,
+      // but we always set and submit it as false (advance payments disabled).
+      applyAdvance: z.boolean(),
     })
     .refine(
       (data) => {

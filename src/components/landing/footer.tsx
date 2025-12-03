@@ -1,8 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Logo } from "@/components/logo";
 import Image from 'next/image';
+import { Button } from "@/components/ui/button";
+import { Shield } from "lucide-react";
+import { Role } from "@prisma/client";
+import { authClient } from "@/lib/auth-client";
 
 const footerLinks = [
   {
@@ -39,6 +45,33 @@ const socials = [
 ];
 
 export const LandingFooter = () => {
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isCheckingRole, setIsCheckingRole] = useState(true);
+  const router = useRouter();
+
+  // Check if user is an admin
+  useEffect(() => {
+    const checkAdminRole = async () => {
+      try {
+        const session = await authClient.getSession();
+        const userRole = session?.data?.user?.role as Role | undefined;
+        if (
+          userRole === Role.ADMIN ||
+          userRole === Role.SUPERADMIN ||
+          userRole === Role.ACCOUNTING
+        ) {
+          setIsAdmin(true);
+        }
+      } catch (error) {
+        console.error("Error checking admin role:", error);
+      } finally {
+        setIsCheckingRole(false);
+      }
+    };
+
+    checkAdminRole();
+  }, []);
+
   return (
     <footer className="bg-[#111111] text-white">
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 py-12">
@@ -90,8 +123,20 @@ export const LandingFooter = () => {
           ))}
         </div>
 
-        <div className="border-t border-white/10 pt-6 text-sm text-white/50">
-          Copyright © {new Date().getFullYear()} The Promenade Residence
+        <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-white/50">
+            Copyright © {new Date().getFullYear()} The Promenade Residence
+          </p>
+          {!isCheckingRole && isAdmin && (
+            <Button
+              onClick={() => router.push("/admin/dashboard")}
+              className="bg-[#327248] text-white hover:bg-[#28603c] rounded-full px-4 py-2 gap-2"
+              size="sm"
+            >
+              <Shield className="h-4 w-4" />
+              Admin Dashboard
+            </Button>
+          )}
         </div>
       </div>
     </footer>

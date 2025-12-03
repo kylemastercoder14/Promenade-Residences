@@ -188,6 +188,12 @@ enum RelationshipToVehicle {
   COMPANY_DRIVER
 }
 
+enum VehicleRegistrationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model VehicleRegistration {
   id                  String                  @id @default(uuid())
   brand               String
@@ -205,6 +211,7 @@ model VehicleRegistration {
   proofOfPayment      String?
   residentId          String?
   resident            Resident?              @relation(fields: [residentId], references: [id], onDelete: SetNull)
+  status              VehicleRegistrationStatus @default(PENDING)
   isArchived          Boolean                 @default(false)
   createdAt           DateTime                @default(now())
   updatedAt           DateTime                @default(now()) @updatedAt

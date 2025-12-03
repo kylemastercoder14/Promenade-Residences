@@ -74,13 +74,15 @@ const formSchema = z
     }
   )
   .refine((data) => {
-    // If payment method is not CASH, proof of payment is required
-    if (data.paymentMethod && data.paymentMethod !== "CASH" && !data.proofOfPayment) {
-      return false;
+    // Proof of payment is required for all non-cash payment methods (GCASH, MAYA, OTHER_BANK)
+    if (data.paymentMethod && data.paymentMethod !== "CASH") {
+      if (!data.proofOfPayment || data.proofOfPayment.trim() === "") {
+        return false;
+      }
     }
     return true;
   }, {
-    message: "Proof of payment is required for non-cash payment methods",
+    message: "Proof of payment is required for online payments (GCash, Maya, Bank Transfer)",
     path: ["proofOfPayment"],
   });
 
@@ -326,8 +328,15 @@ export const ResidentReservationForm = () => {
     }
   };
 
-  const handleConfirm = () => {
-    form.handleSubmit(onSubmit)();
+  const handleConfirm = async () => {
+    // Trigger validation first
+    const isValid = await form.trigger();
+    if (!isValid) {
+      toast.error("Please fix the form errors before submitting");
+      return;
+    }
+    // Submit the form
+    await form.handleSubmit(onSubmit)();
   };
 
   const isSubmitting = form.formState.isSubmitting;

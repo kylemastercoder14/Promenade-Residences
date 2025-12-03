@@ -172,39 +172,45 @@ export const AnnouncementForm = ({
                  )}
                />
 
-              <FormField
-                control={form.control}
-                name="publication"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>
-                      Publication Status <span className="text-destructive">*</span>
-                    </FormLabel>
-                    <Select
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="DRAFT">Draft</SelectItem>
-                        <SelectItem value="PUBLISHED" disabled={!canPublish}>
-                          Published { !canPublish ? " (Superadmin only)" : "" }
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {!canPublish && (
-                      <FormDescription>
-                        Admin submissions stay in draft until a superadmin publishes them.
-                      </FormDescription>
-                    )}
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {canPublish ? (
+                <FormField
+                  control={form.control}
+                  name="publication"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Publication Status <span className="text-destructive">*</span>
+                      </FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="DRAFT">Draft</SelectItem>
+                          <SelectItem value="PUBLISHED">Published</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : (
+                <FormItem>
+                  <FormLabel>
+                    Publication Status
+                  </FormLabel>
+                  <div className="p-3 bg-muted rounded-md">
+                    <p className="text-sm text-muted-foreground">
+                      Draft (Admin submissions require superadmin approval to publish)
+                    </p>
+                  </div>
+                </FormItem>
+              )}
             </div>
 
              <FormField
@@ -334,9 +340,39 @@ export const AnnouncementForm = ({
               >
                 Cancel
               </Button>
+              {!canPublish && !isEditMode && (
+                <Button
+                  type="button"
+                  variant="primary"
+                  onClick={() => {
+                    form.setValue("publication", "DRAFT");
+                    form.handleSubmit(onSubmit)();
+                  }}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit for Approval"}
+                </Button>
+              )}
               <Button type="submit" variant="primary" disabled={isSubmitting}>
-                {isEditMode ? "Save Changes" : "Create Announcement"}
+                {isEditMode ? "Save Changes" : canPublish ? "Create Announcement" : "Save as Draft"}
               </Button>
+              {canPublish && initialData && initialData.publication === "DRAFT" && (
+                <Button
+                  type="button"
+                  variant="default"
+                  onClick={async () => {
+                    try {
+                      form.setValue("publication", "PUBLISHED");
+                      await onSubmit(form.getValues());
+                    } catch (error) {
+                      console.error("Error publishing announcement:", error);
+                    }
+                  }}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Publishing..." : "Approve & Publish"}
+                </Button>
+              )}
             </div>
           </form>
         </Form>

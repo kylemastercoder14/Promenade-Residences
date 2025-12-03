@@ -336,17 +336,32 @@ export const monthlyDuesRouter = createTRPCRouter({
 
       let monthlyDueRecord;
       if (existing) {
-        // Update existing payment
-        monthlyDueRecord = await prisma.monthlyDue.update({
-          where: { id: existing.id },
-          data: {
-            amountPaid: existing.amountPaid + paymentData.amountPaid,
-            paymentMethod: paymentData.paymentMethod,
-            notes: paymentData.notes || existing.notes,
-            attachment: paymentData.attachment || existing.attachment,
-            status: MonthlyDueStatus.PENDING,
-          },
-        });
+        // If existing payment is rejected, reset amountPaid and create a new payment attempt
+        if (existing.status === MonthlyDueStatus.REJECTED) {
+          // Reset the payment and create a new attempt
+          monthlyDueRecord = await prisma.monthlyDue.update({
+            where: { id: existing.id },
+            data: {
+              amountPaid: paymentData.amountPaid, // Reset to new amount, don't add to rejected amount
+              paymentMethod: paymentData.paymentMethod,
+              notes: paymentData.notes || existing.notes,
+              attachment: paymentData.attachment || existing.attachment,
+              status: MonthlyDueStatus.PENDING, // Reset to pending for reattempt
+            },
+          });
+        } else {
+          // Update existing payment (for pending/approved statuses)
+          monthlyDueRecord = await prisma.monthlyDue.update({
+            where: { id: existing.id },
+            data: {
+              amountPaid: existing.amountPaid + paymentData.amountPaid,
+              paymentMethod: paymentData.paymentMethod,
+              notes: paymentData.notes || existing.notes,
+              attachment: paymentData.attachment || existing.attachment,
+              status: MonthlyDueStatus.PENDING,
+            },
+          });
+        }
       } else {
         // Create new payment
         monthlyDueRecord = await prisma.monthlyDue.create({

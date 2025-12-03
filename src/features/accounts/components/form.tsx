@@ -25,6 +25,9 @@ import { useState } from "react";
 import { useUpdateAccount, useUpdateRole, useApproveOrRejectAccount } from "@/features/accounts/hooks/use-accounts";
 import { User } from "@/lib/auth";
 import { toast } from "sonner";
+import { useTRPC } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
+import { FormDescription } from "@/components/ui/form";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -48,6 +51,22 @@ export const AccountForm = ({ initialData }: { initialData: User | null }) => {
   const action = initialData ? "Save changes" : "Create account";
 
   const [isVisible, setIsVisible] = useState(false);
+  const trpc = useTRPC();
+
+  // Fetch residents to check for household number
+  const { data: residents = [] } = useQuery(
+    trpc.residents.getMany.queryOptions()
+  );
+
+  // Find resident by email to get household number
+  const residentByEmail = initialData
+    ? residents.find(
+        (r) => r.emailAddress?.toLowerCase() === initialData.email.toLowerCase()
+      )
+    : null;
+  const householdNumber = residentByEmail?.map
+    ? `Block ${residentByEmail.map.blockNo} - Lot ${residentByEmail.map.lotNo || "N/A"} - ${residentByEmail.map.street}`
+    : null;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -180,6 +199,19 @@ export const AccountForm = ({ initialData }: { initialData: User | null }) => {
                 </FormItem>
               )}
             />
+            {initialData && householdNumber && (
+              <FormItem>
+                <FormLabel>
+                  Household Number (Block & Lot)
+                </FormLabel>
+                <div className="p-3 bg-muted rounded-md">
+                  <p className="text-sm font-medium">{householdNumber}</p>
+                </div>
+                <FormDescription>
+                  Linked household number based on resident record with matching email
+                </FormDescription>
+              </FormItem>
+            )}
             {!initialData && (
               <FormField
                 control={form.control}

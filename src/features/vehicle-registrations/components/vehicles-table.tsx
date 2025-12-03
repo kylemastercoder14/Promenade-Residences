@@ -47,6 +47,32 @@ const getRelationshipLabel = (relationship: string) => {
   }
 };
 
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case "PENDING":
+      return "Pending";
+    case "APPROVED":
+      return "Approved";
+    case "REJECTED":
+      return "Rejected";
+    default:
+      return status;
+  }
+};
+
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case "PENDING":
+      return "bg-yellow-100 text-yellow-700 border-yellow-300";
+    case "APPROVED":
+      return "bg-green-100 text-green-700 border-green-300";
+    case "REJECTED":
+      return "bg-red-100 text-red-700 border-red-300";
+    default:
+      return "bg-gray-100 text-gray-700 border-gray-300";
+  }
+};
+
 const getResidentFullName = (resident?: {
   firstName: string;
   middleName?: string | null;
@@ -100,6 +126,7 @@ export const VehiclesTable = () => {
             <TableHead>Registered To</TableHead>
             <TableHead>Relationship</TableHead>
             <TableHead>License Expiry</TableHead>
+            <TableHead>Status</TableHead>
             <TableHead>Registered Date</TableHead>
           </TableRow>
         </TableHeader>
@@ -138,6 +165,14 @@ export const VehiclesTable = () => {
                       </Badge>
                     )}
                   </div>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant="outline"
+                    className={`${getStatusColor(vehicle.status || "PENDING")} border`}
+                  >
+                    {getStatusLabel(vehicle.status || "PENDING")}
+                  </Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {format(new Date(vehicle.createdAt), "MMM dd, yyyy")}

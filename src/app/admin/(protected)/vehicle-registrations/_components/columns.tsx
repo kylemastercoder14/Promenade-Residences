@@ -217,7 +217,7 @@ export const columns: ColumnDef<VehicleRegistration>[] = [
     },
   },
   {
-    accessorKey: "selectableFiltered",
+    accessorKey: "status",
     header: ({ column }) => {
       return (
         <Button
@@ -230,23 +230,34 @@ export const columns: ColumnDef<VehicleRegistration>[] = [
       );
     },
     cell: ({ row }) => {
-      const status = row.original.isArchived ? "Inactive" : "Active";
+      const registrationStatus = (row.original as any).status || "PENDING";
+      const isArchived = row.original.isArchived;
 
-      const variants: Record<
-        typeof status,
+      const statusVariants: Record<
+        string,
         { label: string; className: string }
       > = {
-        Active: {
-          label: "Active",
+        PENDING: {
+          label: "Pending",
+          className: "bg-yellow-100 border border-yellow-600 text-yellow-600",
+        },
+        APPROVED: {
+          label: "Approved",
           className: "bg-green-100 border border-green-600 text-green-600",
+        },
+        REJECTED: {
+          label: "Rejected",
+          className: "bg-red-100 border border-red-600 text-red-600",
         },
         Inactive: {
           label: "Inactive",
-          className: "bg-red-100 border border-red-600 text-red-600",
+          className: "bg-gray-100 border border-gray-600 text-gray-600",
         },
       };
 
-      const current = variants[status] ?? variants["Active"];
+      const current = isArchived
+        ? statusVariants["Inactive"]
+        : statusVariants[registrationStatus] ?? statusVariants["PENDING"];
 
       return (
         <Badge
@@ -262,8 +273,9 @@ export const columns: ColumnDef<VehicleRegistration>[] = [
       if (!filterValue || !Array.isArray(filterValue) || filterValue.length === 0) {
         return true;
       }
+      const registrationStatus = (row.original as any).status || "PENDING";
       const isArchived = row.original.isArchived;
-      const status = isArchived ? "Inactive" : "Active";
+      const status = isArchived ? "Inactive" : registrationStatus;
       return filterValue.includes(status);
     },
   },

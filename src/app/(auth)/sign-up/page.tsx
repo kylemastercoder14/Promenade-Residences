@@ -96,7 +96,7 @@ const requiredFieldsPerStep: Array<Array<keyof SignUpFormData>> = [
   ["residencyType", "firstName", "lastName"],
   ["sex", "dateOfBirth"],
   ["block", "lot", "street"],
-  ["email", "contactNumber", "password"],
+  ["email", "password"], // contactNumber is now optional
 ];
 
 const calculateAge = (date: string) => {
@@ -217,10 +217,7 @@ const Page = () => {
   const isLastStep = activeStep === stepTitles.length - 1;
   const canAdvance = requiredFieldsPerStep[activeStep].every((field) => {
     const value = formData[field];
-    if (field === "contactNumber") {
-      // Contact number must have at least 10 digits
-      return String(value).trim().length >= 10;
-    }
+    // contactNumber is optional, so we don't check it here
     return String(value).trim().length > 0;
   });
 
@@ -442,7 +439,7 @@ const Page = () => {
               />
             </div>
             <div className="grid gap-2">
-              <Label>Contact Number</Label>
+              <Label>Contact Number <span className="text-muted-foreground">(optional)</span></Label>
               <Input
                 type="tel"
                 value={formData.contactNumber}
@@ -452,6 +449,9 @@ const Page = () => {
                 pattern="[0-9]*"
                 maxLength={15}
               />
+              <p className="text-xs text-muted-foreground">
+                Optional - Children may not have mobile numbers
+              </p>
             </div>
             <div className="grid gap-2">
               <Label>Password</Label>

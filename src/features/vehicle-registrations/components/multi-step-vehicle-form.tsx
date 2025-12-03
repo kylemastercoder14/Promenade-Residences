@@ -45,13 +45,13 @@ const formSchema = z.object({
   proofOfPayment: z.string().optional(),
   residentId: z.string().optional(),
 }).refine((data) => {
-  // If payment method is not CASH, proof of payment is required
-  if (data.paymentMethod && data.paymentMethod !== "CASH" && !data.proofOfPayment) {
+  // Proof of payment is required for all vehicle registrations
+  if (!data.proofOfPayment || data.proofOfPayment.trim() === "") {
     return false;
   }
   return true;
 }, {
-  message: "Proof of payment is required for non-cash payment methods",
+  message: "Proof of payment is required for vehicle registration",
   path: ["proofOfPayment"],
 });
 
@@ -454,10 +454,7 @@ export const MultiStepVehicleForm = () => {
               </div>
               <div>
                 <Label className="text-sm font-semibold text-[#1a2c1f]">
-                  Proof of Payment{" "}
-                  {form.watch("paymentMethod") && form.watch("paymentMethod") !== "CASH" && (
-                    <span className="text-destructive">*</span>
-                  )}
+                  Proof of Payment <span className="text-destructive">*</span>
                 </Label>
                 <div className="mt-1">
                   <ImageUpload

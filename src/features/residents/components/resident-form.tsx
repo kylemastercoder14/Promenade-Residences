@@ -303,7 +303,7 @@ export const ResidentForm = ({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      Property/Lot{" "}
+                      Household Number (Block & Lot){" "}
                       <span className="text-muted-foreground">(optional)</span>
                     </FormLabel>
                     <Select
@@ -314,7 +314,7 @@ export const ResidentForm = ({
                     >
                       <FormControl>
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select property" />
+                          <SelectValue placeholder="Select household" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -328,7 +328,7 @@ export const ResidentForm = ({
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      Link to a property/lot on the map
+                      Link to a property/lot on the map (Block & Lot)
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

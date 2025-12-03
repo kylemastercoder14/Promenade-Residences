@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Logo } from "@/components/logo";
-import Image from 'next/image';
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Shield } from "lucide-react";
 import { Role } from "@prisma/client";
@@ -23,7 +23,7 @@ const footerLinks = [
     title: "Help",
     items: [
       { label: "FAQs", href: "/faqs" },
-	  { label: "About", href: "/about" },
+      { label: "About", href: "/about" },
       { label: "Contact Us", href: "/contact" },
     ],
   },
@@ -38,39 +38,58 @@ const footerLinks = [
 ];
 
 const socials = [
-  { icon: <Image src="/icons/facebook_logo.png" alt="Facebook" width={10} height={10} className='object-contain' />, href: "https://facebook.com" },
-  { icon: <Image src="/icons/x_logo.png" alt="X" width={16} height={16} className='object-contain' />, href: "https://twitter.com" },
-  { icon: <Image src="/icons/instagram_logo.png" alt="Instagram" width={16} height={16} className='object-contain' />, href: "https://instagram.com" },
-  { icon: <Image src="/icons/linkedin_logo.png" alt="Linkedin" width={16} height={16} className='object-contain' />, href: "https://linkedin.com" },
+  {
+    icon: (
+      <Image
+        src="/icons/facebook_logo.png"
+        alt="Facebook"
+        width={10}
+        height={10}
+        className="object-contain"
+      />
+    ),
+    href: "https://facebook.com",
+  },
+  {
+    icon: (
+      <Image
+        src="/icons/x_logo.png"
+        alt="X"
+        width={16}
+        height={16}
+        className="object-contain"
+      />
+    ),
+    href: "https://twitter.com",
+  },
+  {
+    icon: (
+      <Image
+        src="/icons/instagram_logo.png"
+        alt="Instagram"
+        width={16}
+        height={16}
+        className="object-contain"
+      />
+    ),
+    href: "https://instagram.com",
+  },
+  {
+    icon: (
+      <Image
+        src="/icons/linkedin_logo.png"
+        alt="Linkedin"
+        width={16}
+        height={16}
+        className="object-contain"
+      />
+    ),
+    href: "https://linkedin.com",
+  },
 ];
 
 export const LandingFooter = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isCheckingRole, setIsCheckingRole] = useState(true);
   const router = useRouter();
-
-  // Check if user is an admin
-  useEffect(() => {
-    const checkAdminRole = async () => {
-      try {
-        const session = await authClient.getSession();
-        const userRole = session?.data?.user?.role as Role | undefined;
-        if (
-          userRole === Role.ADMIN ||
-          userRole === Role.SUPERADMIN ||
-          userRole === Role.ACCOUNTING
-        ) {
-          setIsAdmin(true);
-        }
-      } catch (error) {
-        console.error("Error checking admin role:", error);
-      } finally {
-        setIsCheckingRole(false);
-      }
-    };
-
-    checkAdminRole();
-  }, []);
 
   return (
     <footer className="bg-[#111111] text-white">
@@ -101,7 +120,8 @@ export const LandingFooter = () => {
               Promenade Residence
             </p>
             <p className="text-sm text-white/60">
-              Promenade Residence is a community of residents who are committed to living in a safe, secure, and friendly environment.
+              Promenade Residence is a community of residents who are committed
+              to living in a safe, secure, and friendly environment.
             </p>
           </div>
 
@@ -113,7 +133,10 @@ export const LandingFooter = () => {
               <ul className="space-y-2 text-sm text-white/65">
                 {section.items.map((item) => (
                   <li key={item.label}>
-                    <Link href={item.href} className="transition hover:text-white">
+                    <Link
+                      href={item.href}
+                      className="transition hover:text-white"
+                    >
                       {item.label}
                     </Link>
                   </li>
@@ -127,19 +150,16 @@ export const LandingFooter = () => {
           <p className="text-sm text-white/50">
             Copyright © {new Date().getFullYear()} The Promenade Residence
           </p>
-          {!isCheckingRole && isAdmin && (
-            <Button
-              onClick={() => router.push("/admin/dashboard")}
-              className="bg-[#327248] text-white hover:bg-[#28603c] rounded-full px-4 py-2 gap-2"
-              size="sm"
-            >
-              <Shield className="h-4 w-4" />
-              Admin Dashboard
-            </Button>
-          )}
+          <Button
+            onClick={() => router.push("/admin/dashboard")}
+            className="bg-[#327248] text-white hover:bg-[#28603c] rounded-full px-4 py-2 gap-2"
+            size="sm"
+          >
+            <Shield className="h-4 w-4" />
+            Admin Dashboard
+          </Button>
         </div>
       </div>
     </footer>
   );
 };
-

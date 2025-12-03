@@ -16,7 +16,8 @@ interface Resident {
   middleName: string | null;
   lastName: string;
   suffix: string | null;
-  contactNumber: string;
+  // Contact number is now optional/nullable in the database
+  contactNumber: string | null;
   emailAddress: string | null;
   typeOfResidency: string;
   isHead: boolean;
@@ -240,10 +241,12 @@ export const LotDetailsDialog = ({ open, onOpenChange, lotDetails, isLoading, bl
                         {headOfHousehold.typeOfResidency === "RESIDENT" ? "Owner" : "Tenant"}
                       </Badge>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Phone className="size-3" />
-                      <span>{headOfHousehold.contactNumber}</span>
-                    </div>
+                    {headOfHousehold.contactNumber && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Phone className="size-3" />
+                        <span>{headOfHousehold.contactNumber}</span>
+                      </div>
+                    )}
                     {headOfHousehold.emailAddress && (
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Mail className="size-3" />
@@ -263,10 +266,12 @@ export const LotDetailsDialog = ({ open, onOpenChange, lotDetails, isLoading, bl
                             {resident.typeOfResidency === "RESIDENT" ? "Owner" : "Tenant"}
                           </Badge>
                         </div>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                          <Phone className="size-3" />
-                          <span>{resident.contactNumber}</span>
-                        </div>
+                        {resident.contactNumber && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                            <Phone className="size-3" />
+                            <span>{resident.contactNumber}</span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

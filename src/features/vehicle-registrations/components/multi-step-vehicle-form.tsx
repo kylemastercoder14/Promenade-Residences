@@ -69,7 +69,7 @@ const formSchema = z.object({
   if (paymentMethod === "GCASH" || paymentMethod === "OTHER_BANK") {
     // Payment method is required for GCash and Bank Transfer
     // Since they selected it, it should be set, but validate it's not undefined/null
-    if (paymentMethod === undefined || paymentMethod === null || paymentMethod === "") {
+    if (paymentMethod === undefined || paymentMethod === null) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Payment method is required for GCash and Bank Transfer",

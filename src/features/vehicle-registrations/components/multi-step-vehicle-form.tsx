@@ -173,7 +173,7 @@ export const MultiStepVehicleForm = () => {
       const paymentMethod = form.getValues("paymentMethod");
       if (paymentMethod === "GCASH" || paymentMethod === "OTHER_BANK") {
         // Payment method is required for GCash and Bank Transfer
-        if (!paymentMethod || paymentMethod === undefined || paymentMethod === null || paymentMethod === "") {
+        if (paymentMethod === undefined || paymentMethod === null) {
           form.setError("paymentMethod", {
             type: "manual",
             message: "Payment method is required for GCash and Bank Transfer",

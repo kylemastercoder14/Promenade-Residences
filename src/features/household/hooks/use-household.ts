@@ -25,3 +25,16 @@ export const useAddHouseholdMember = () => {
   );
 };
 
+export const useRemoveHouseholdMember = () => {
+  const queryClient = useQueryClient();
+  const trpc = useTRPC();
+
+  return useMutation(
+    trpc.auth.removeHouseholdMember.mutationOptions({
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [["auth", "getHouseholdMembers"]] });
+      },
+    })
+  );
+};
+

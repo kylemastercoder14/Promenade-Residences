@@ -333,7 +333,7 @@ export const authRouter = createTRPCRouter({
         suffix: z.string().optional(),
         sex: z.enum(["MALE", "FEMALE", "PREFER_NOT_TO_SAY"]),
         dateOfBirth: z.string().min(1, "Date of birth is required"),
-        contactNumber: z.string().min(1, "Contact number is required"),
+        contactNumber: z.string().optional().or(z.literal("")),
         emailAddress: z.string().email().optional().or(z.literal("")),
       })
     )
@@ -368,7 +368,7 @@ export const authRouter = createTRPCRouter({
           suffix: input.suffix || null,
           sex: input.sex as Sex,
           dateOfBirth: new Date(input.dateOfBirth),
-          contactNumber: input.contactNumber,
+          contactNumber: input.contactNumber === "" || !input.contactNumber ? null : input.contactNumber,
           emailAddress: input.emailAddress === "" ? null : input.emailAddress,
           isHead: false, // Household member, not head
           mapId: headResident.mapId, // Same household/property
@@ -428,6 +428,70 @@ export const authRouter = createTRPCRouter({
 
     return members;
   }),
+
+  // Remove household member (archive, only for non-head members)
+  removeHouseholdMember: protectedProcedure
+    .input(
+      z.object({
+        memberId: z.string().min(1, "Member ID is required"),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userEmail = ctx.auth.user.email;
+
+      // Get current user's resident record (household head)
+      const headResident = await prisma.resident.findFirst({
+        where: {
+          emailAddress: userEmail,
+          isHead: true,
+        },
+      });
+
+      if (!headResident || !headResident.mapId) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Household head record not found.",
+        });
+      }
+
+      // Get the member to be removed
+      const member = await prisma.resident.findUnique({
+        where: { id: input.memberId },
+      });
+
+      if (!member) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Household member not found.",
+        });
+      }
+
+      // Verify the member belongs to the same household
+      if (member.mapId !== headResident.mapId) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You can only remove members from your own household.",
+        });
+      }
+
+      // Prevent removing the head of household
+      if (member.isHead) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Cannot remove the head of household.",
+        });
+      }
+
+      // Archive the member (soft delete)
+      const result = await prisma.resident.update({
+        where: { id: input.memberId },
+        data: {
+          isArchived: true,
+        },
+      });
+
+      return result;
+    }),
 
   // Update user profile (name, email, image)
   updateProfile: protectedProcedure

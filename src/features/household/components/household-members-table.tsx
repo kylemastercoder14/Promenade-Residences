@@ -9,9 +9,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useGetHouseholdMembers } from "../hooks/use-household";
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useGetHouseholdMembers, useRemoveHouseholdMember } from "../hooks/use-household";
 import { format } from "date-fns";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
 import type { Resident, Maps } from "@prisma/client";
 
 type ResidentWithMap = Resident & {
@@ -70,6 +83,27 @@ const calculateAge = (dateOfBirth: Date) => {
 
 export const HouseholdMembersTable = () => {
   const { data: members = [], isLoading } = useGetHouseholdMembers();
+  const removeMemberMutation = useRemoveHouseholdMember();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [memberToDelete, setMemberToDelete] = useState<ResidentWithMap | null>(null);
+
+  const handleDeleteClick = (member: ResidentWithMap) => {
+    setMemberToDelete(member);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!memberToDelete) return;
+
+    try {
+      await removeMemberMutation.mutateAsync({ memberId: memberToDelete.id });
+      toast.success("Household member removed successfully");
+      setDeleteDialogOpen(false);
+      setMemberToDelete(null);
+    } catch (error: any) {
+      toast.error(error.message || "Failed to remove household member");
+    }
+  };
 
   if (isLoading) {
     return (
@@ -101,6 +135,7 @@ export const HouseholdMembersTable = () => {
             <TableHead>Date of Birth</TableHead>
             <TableHead>Contact Number</TableHead>
             <TableHead>Email</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -130,15 +165,57 @@ export const HouseholdMembersTable = () => {
                 <TableCell>
                   {format(new Date(member.dateOfBirth), "MMM dd, yyyy")}
                 </TableCell>
-                <TableCell>{member.contactNumber}</TableCell>
+                <TableCell className="text-muted-foreground">
+                  {member.contactNumber || "—"}
+                </TableCell>
                 <TableCell className="text-muted-foreground">
                   {member.emailAddress || "—"}
+                </TableCell>
+                <TableCell>
+                  {!member.isHead && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteClick(member)}
+                      disabled={removeMemberMutation.isPending}
+                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             );
           })}
         </TableBody>
       </Table>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Household Member?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove{" "}
+              <span className="font-semibold">
+                {memberToDelete
+                  ? getFullName(memberToDelete)
+                  : "this member"}
+              </span>{" "}
+              from your household? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteConfirm}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={removeMemberMutation.isPending}
+            >
+              {removeMemberMutation.isPending ? "Removing..." : "Remove"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

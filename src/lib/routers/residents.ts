@@ -31,7 +31,7 @@ const residentSchema = z.object({
   suffix: z.string().optional(),
   sex: z.enum(["MALE", "FEMALE", "PREFER_NOT_TO_SAY"]),
   dateOfBirth: z.date(),
-  contactNumber: z.string().min(1, "Contact number is required"),
+  contactNumber: z.string().optional().or(z.literal("")),
   emailAddress: z.string().email().optional().or(z.literal("")),
   isHead: z.boolean().default(false),
   mapId: z.string().optional(),
@@ -100,6 +100,7 @@ export const residentsRouter = createTRPCRouter({
       const result = await prisma.resident.create({
         data: {
           ...data,
+          contactNumber: data.contactNumber === "" || !data.contactNumber ? null : data.contactNumber,
           emailAddress: data.emailAddress === "" ? null : data.emailAddress,
           mapId: data.mapId === "" ? null : data.mapId,
         },
@@ -168,6 +169,7 @@ export const residentsRouter = createTRPCRouter({
         },
         data: {
           ...data,
+          contactNumber: data.contactNumber === "" || !data.contactNumber ? null : data.contactNumber,
           emailAddress: data.emailAddress === "" ? null : data.emailAddress,
           mapId: data.mapId === "" ? null : data.mapId,
         },

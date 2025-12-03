@@ -53,7 +53,7 @@ const residencyOptions = [
 const requiredFieldsPerStep: Array<Array<keyof HouseholdMemberFormData>> = [
   ["typeOfResidency", "firstName", "lastName"],
   ["sex", "dateOfBirth"],
-  ["contactNumber"],
+  [], // Contact information step - all fields are optional
 ];
 
 const calculateAge = (date: string) => {
@@ -152,7 +152,7 @@ export const HouseholdMemberForm = () => {
         lastName: formData.lastName,
         sex: formData.sex.toUpperCase() as Sex,
         dateOfBirth: formData.dateOfBirth,
-        contactNumber: formData.contactNumber,
+        contactNumber: formData.contactNumber || undefined,
         emailAddress: formData.emailAddress || undefined,
       });
 
@@ -243,12 +243,20 @@ export const HouseholdMemberForm = () => {
         return (
           <div className="grid gap-4">
             <div className="grid gap-2">
-              <Label>Contact Number</Label>
+              <Label className="flex items-center gap-2">
+                Contact Number{" "}
+                <span className="text-xs text-muted-foreground">
+                  (optional)
+                </span>
+              </Label>
               <Input
                 value={formData.contactNumber}
                 onChange={handleFieldChange("contactNumber")}
                 placeholder="+63 912 345 6789"
               />
+              <p className="text-xs text-muted-foreground">
+                Optional - Children may not have mobile numbers
+              </p>
             </div>
             <div className="grid gap-2">
               <Label className="flex items-center gap-2">

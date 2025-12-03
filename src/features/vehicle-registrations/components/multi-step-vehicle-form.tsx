@@ -44,7 +44,8 @@ const formSchema = z.object({
   paymentMethod: z.enum(["CASH", "GCASH", "MAYA", "OTHER_BANK"]).optional(),
   proofOfPayment: z.string().optional(),
   residentId: z.string().optional(),
-}).refine((data) => {
+})
+.refine((data) => {
   // Proof of payment is required for all vehicle registrations
   if (!data.proofOfPayment || data.proofOfPayment.trim() === "") {
     return false;
@@ -53,6 +54,30 @@ const formSchema = z.object({
 }, {
   message: "Proof of payment is required for vehicle registration",
   path: ["proofOfPayment"],
+})
+.superRefine((data, ctx) => {
+  // Payment method validation:
+  // - Required for GCash and Bank Transfer (must be selected)
+  // - Optional for Cash
+  // The validation: if paymentMethod is GCASH or OTHER_BANK, it must be set (not undefined)
+  // Since paymentMethod is optional in the base schema, we need to validate it here
+
+  const paymentMethod = data.paymentMethod;
+
+  // If paymentMethod is GCASH or OTHER_BANK, it's already set (since they selected it from dropdown)
+  // So validation should pass. But we need to ensure it's actually set and not undefined/null
+  if (paymentMethod === "GCASH" || paymentMethod === "OTHER_BANK") {
+    // Payment method is required for GCash and Bank Transfer
+    // Since they selected it, it should be set, but validate it's not undefined/null
+    if (paymentMethod === undefined || paymentMethod === null || paymentMethod === "") {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Payment method is required for GCash and Bank Transfer",
+        path: ["paymentMethod"],
+      });
+    }
+  }
+  // For CASH or undefined, payment method is optional - no validation needed
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -118,31 +143,60 @@ export const MultiStepVehicleForm = () => {
     }
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === "vehicle") {
       // Validate vehicle fields
       const vehicleFields = ["brand", "model", "yearOfManufacture", "color", "plateNumber", "vehicleType"] as const;
-      const isValid = vehicleFields.every((field) => {
-        const value = form.getValues(field);
-        return value !== undefined && value !== null && value !== "";
-      });
+      const isValid = await form.trigger(vehicleFields);
       if (isValid) {
         setStep("driver");
       } else {
-        form.trigger(vehicleFields);
+        toast.error("Please fill in all required vehicle fields");
       }
     } else if (step === "driver") {
-      // Validate driver fields
-      const driverFields = ["licenseNumber", "expiryDate", "relationshipToVehicle"] as const;
-      const isValid = driverFields.every((field) => {
-        const value = form.getValues(field);
+      // Validate driver fields including payment method and proof of payment
+      const driverFields = ["licenseNumber", "expiryDate", "relationshipToVehicle", "paymentMethod", "proofOfPayment"] as const;
+
+      // First check basic field requirements
+      const basicFieldsValid = ["licenseNumber", "expiryDate", "relationshipToVehicle", "proofOfPayment"].every((field) => {
+        const value = form.getValues(field as keyof FormData);
         return value !== undefined && value !== null && value !== "";
       });
-      if (isValid) {
-        setStep("summary");
-      } else {
-        form.trigger(driverFields);
+
+      if (!basicFieldsValid) {
+        await form.trigger(["licenseNumber", "expiryDate", "relationshipToVehicle", "proofOfPayment"]);
+        toast.error("Please fill in all required fields");
+        return;
       }
+
+      // Then validate payment method if GCash or Bank Transfer is selected
+      const paymentMethod = form.getValues("paymentMethod");
+      if (paymentMethod === "GCASH" || paymentMethod === "OTHER_BANK") {
+        // Payment method is required for GCash and Bank Transfer
+        if (!paymentMethod || paymentMethod === undefined || paymentMethod === null || paymentMethod === "") {
+          form.setError("paymentMethod", {
+            type: "manual",
+            message: "Payment method is required for GCash and Bank Transfer",
+          });
+          toast.error("Payment method is required for GCash and Bank Transfer");
+          return;
+        }
+      }
+
+      // Trigger full validation
+      const isValid = await form.trigger(driverFields);
+      if (!isValid) {
+        // Show error message if validation failed
+        const paymentMethodError = form.formState.errors.paymentMethod;
+        if (paymentMethodError) {
+          toast.error(paymentMethodError.message || "Please fix the errors in the form");
+        } else {
+          toast.error("Please fill in all required fields");
+        }
+        return;
+      }
+
+      setStep("summary");
     }
   };
 
@@ -154,8 +208,22 @@ export const MultiStepVehicleForm = () => {
     }
   };
 
-  const handleConfirm = () => {
-    form.handleSubmit(onSubmit)();
+  const handleConfirm = async () => {
+    // Trigger validation for all fields before submission
+    const isValid = await form.trigger();
+    if (isValid) {
+      form.handleSubmit(onSubmit)();
+    } else {
+      // Scroll to first error
+      const firstError = Object.keys(form.formState.errors)[0];
+      if (firstError) {
+        const element = document.querySelector(`[name="${firstError}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }
+      toast.error("Please fix the errors in the form before submitting");
+    }
   };
 
   const isSubmitting = form.formState.isSubmitting;
@@ -432,9 +500,16 @@ export const MultiStepVehicleForm = () => {
               <div>
                 <Label className="text-sm font-semibold text-[#1a2c1f]">
                   Payment Method
+                  {(form.watch("paymentMethod") === "GCASH" || form.watch("paymentMethod") === "OTHER_BANK") && (
+                    <span className="text-destructive"> *</span>
+                  )}
                 </Label>
                 <Select
-                  onValueChange={(value) => form.setValue("paymentMethod", value as FormData["paymentMethod"])}
+                  onValueChange={(value) => {
+                    form.setValue("paymentMethod", value as FormData["paymentMethod"]);
+                    // Trigger validation when payment method changes
+                    form.trigger("paymentMethod");
+                  }}
                   value={form.watch("paymentMethod")}
                 >
                   <SelectTrigger className="mt-1 w-full bg-[#f6f8f5]">
@@ -449,6 +524,11 @@ export const MultiStepVehicleForm = () => {
                 {form.formState.errors.paymentMethod && (
                   <p className="text-sm text-destructive mt-1">
                     {form.formState.errors.paymentMethod.message}
+                  </p>
+                )}
+                {(form.watch("paymentMethod") === "GCASH" || form.watch("paymentMethod") === "OTHER_BANK") && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Payment method is required for GCash and Bank Transfer
                   </p>
                 )}
               </div>

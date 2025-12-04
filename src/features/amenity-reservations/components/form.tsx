@@ -210,12 +210,8 @@ export const ReservationForm = ({
       return 0;
     }
 
-    if (amenity === "GAZEBO") {
-      // 60 pesos per 3-hour block (ceil to next block)
-      const blocks = Math.ceil(hours / 3);
-      return blocks * 60;
-    } else if (amenity === "COURT") {
-      // 100 pesos per hour
+    if (amenity === "GAZEBO" || amenity === "COURT") {
+      // 100 pesos per hour for both gazebo and court
       return hours * 100;
     }
     return 0;
@@ -677,16 +673,9 @@ export const ReservationForm = ({
                   ₱{calculatedAmount.toLocaleString()}
                 </span>
               </div>
-              {amenity === "GAZEBO" && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  60 pesos for 3 hours
-                </p>
-              )}
-              {amenity === "COURT" && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  100 pesos per hour
-                </p>
-              )}
+              <p className="text-xs text-muted-foreground mt-1">
+                100 pesos per hour
+              </p>
             </div>
 
             <Button type="submit" variant="primary" disabled={isSubmitting}>

@@ -427,7 +427,7 @@ const Page = () => {
 
       {/* Charts */}
       <div className="grid md:grid-cols-10 gap-6">
-        <div className="md:col-span-7">
+        <div className="md:col-span-7 min-w-0">
           <CollectionAreaChart />
           <div className="mt-6">
             <RecentTransactionsTable
@@ -436,8 +436,10 @@ const Page = () => {
             />
           </div>
         </div>
-        <div className="md:col-span-3 space-y-6">
-          <AmenityReservationCalendar />
+        <div className="md:col-span-3 space-y-6 min-w-0">
+          <div className="w-full overflow-x-auto">
+            <AmenityReservationCalendar />
+          </div>
           <ReservationStatusChart />
         </div>
       </div>

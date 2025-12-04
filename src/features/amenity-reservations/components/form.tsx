@@ -205,10 +205,18 @@ export const ReservationForm = ({
     const end = new Date(`2000-01-01T${endTime}`);
     const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
 
+    // Guard against invalid ranges (end before start)
+    if (!Number.isFinite(hours) || hours <= 0) {
+      return 0;
+    }
+
     if (amenity === "GAZEBO") {
-      return 60; // 60 pesos for 3 hours
+      // 60 pesos per 3-hour block (ceil to next block)
+      const blocks = Math.ceil(hours / 3);
+      return blocks * 60;
     } else if (amenity === "COURT") {
-      return hours * 100; // 100 pesos per hour
+      // 100 pesos per hour
+      return hours * 100;
     }
     return 0;
   }, [amenity, startTime, endTime]);
@@ -466,7 +474,7 @@ export const ReservationForm = ({
                     </FormLabel>
                     <Select
                       onValueChange={field.onChange}
-                      defaultValue={field.value}
+                      value={field.value}
                     >
                       <FormControl>
                         <SelectTrigger className="w-full">

@@ -427,6 +427,7 @@ export const dashboardRouter = createTRPCRouter({
       })
     )
     .query(async ({ input }) => {
+      const MONTHLY_DUE_AMOUNT = 750;
       const startDate = input.month
         ? new Date(input.year, input.month - 1, 1)
         : new Date(input.year, 0, 1);
@@ -449,7 +450,7 @@ export const dashboardRouter = createTRPCRouter({
 
       const unpaid = monthlyDues
         .filter((due) => due.status !== "APPROVED")
-        .reduce((sum, due) => sum + (due.amountToPay - due.amountPaid), 0);
+        .reduce((sum, due) => sum + Math.max(0, MONTHLY_DUE_AMOUNT - due.amountPaid), 0);
 
       return {
         paid,

@@ -327,5 +327,102 @@ export const vehicleRegistrationsRouter = createTRPCRouter({
 
       return result;
     }),
+  approve: adminVehicleProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const vehicle = await prisma.vehicleRegistration.findUniqueOrThrow({
+        where: { id: input.id },
+      });
+
+      const result = await prisma.vehicleRegistration.update({
+        where: {
+          id: input.id,
+        },
+        data: {
+          status: "APPROVED",
+          rejectionReason: null,
+        },
+        include: {
+          resident: {
+            select: {
+              id: true,
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              suffix: true,
+            },
+          },
+        },
+      });
+
+      await createSystemLog({
+        userId: ctx.auth.user.id,
+        action: LogAction.UPDATE,
+        module: LogModule.VEHICLE_REGISTRATIONS,
+        entityId: input.id,
+        entityType: "VehicleRegistration",
+        description: createLogDescription(
+          LogAction.UPDATE,
+          "Vehicle Registration",
+          `Approved: ${vehicle.brand} ${vehicle.model} (${vehicle.plateNumber})`
+        ),
+        metadata: { status: "APPROVED" },
+      });
+
+      return result;
+    }),
+  reject: adminVehicleProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        rejectionReason: z.string().min(1, "Rejection reason is required"),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      const vehicle = await prisma.vehicleRegistration.findUniqueOrThrow({
+        where: { id: input.id },
+      });
+
+      const result = await prisma.vehicleRegistration.update({
+        where: {
+          id: input.id,
+        },
+        data: {
+          status: "REJECTED",
+          rejectionReason: input.rejectionReason,
+        },
+        include: {
+          resident: {
+            select: {
+              id: true,
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              suffix: true,
+            },
+          },
+        },
+      });
+
+      await createSystemLog({
+        userId: ctx.auth.user.id,
+        action: LogAction.UPDATE,
+        module: LogModule.VEHICLE_REGISTRATIONS,
+        entityId: input.id,
+        entityType: "VehicleRegistration",
+        description: createLogDescription(
+          LogAction.UPDATE,
+          "Vehicle Registration",
+          `Rejected: ${vehicle.brand} ${vehicle.model} (${vehicle.plateNumber})`
+        ),
+        metadata: { status: "REJECTED", rejectionReason: input.rejectionReason },
+      });
+
+      return result;
+    }),
 });
 

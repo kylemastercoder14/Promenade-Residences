@@ -128,3 +128,53 @@ export const useGetMyVehicles = () => {
   return useQuery(trpc.vehicleRegistrations.getMyVehicles.queryOptions());
 };
 
+export const useApproveVehicleRegistration = () => {
+  const queryClient = useQueryClient();
+  const trpc = useTRPC();
+
+  return useMutation(
+    trpc.vehicleRegistrations.approve.mutationOptions({
+      onSuccess: (data) => {
+        queryClient.invalidateQueries(
+          trpc.vehicleRegistrations.getMany.queryOptions()
+        );
+        queryClient.invalidateQueries(
+          trpc.vehicleRegistrations.getOne.queryOptions({ id: data.id })
+        );
+        queryClient.invalidateQueries(
+          trpc.vehicleRegistrations.getMyVehicles.queryOptions()
+        );
+        toast.success("Vehicle registration approved successfully");
+      },
+      onError: (error) => {
+        toast.error(`Failed to approve vehicle registration: ${error.message}`);
+      },
+    })
+  );
+};
+
+export const useRejectVehicleRegistration = () => {
+  const queryClient = useQueryClient();
+  const trpc = useTRPC();
+
+  return useMutation(
+    trpc.vehicleRegistrations.reject.mutationOptions({
+      onSuccess: (data) => {
+        queryClient.invalidateQueries(
+          trpc.vehicleRegistrations.getMany.queryOptions()
+        );
+        queryClient.invalidateQueries(
+          trpc.vehicleRegistrations.getOne.queryOptions({ id: data.id })
+        );
+        queryClient.invalidateQueries(
+          trpc.vehicleRegistrations.getMyVehicles.queryOptions()
+        );
+        toast.success("Vehicle registration rejected successfully");
+      },
+      onError: (error) => {
+        toast.error(`Failed to reject vehicle registration: ${error.message}`);
+      },
+    })
+  );
+};
+

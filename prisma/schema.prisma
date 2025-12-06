@@ -212,6 +212,7 @@ model VehicleRegistration {
   residentId          String?
   resident            Resident?              @relation(fields: [residentId], references: [id], onDelete: SetNull)
   status              VehicleRegistrationStatus @default(PENDING)
+  rejectionReason     String?
   isArchived          Boolean                 @default(false)
   createdAt           DateTime                @default(now())
   updatedAt           DateTime                @default(now()) @updatedAt

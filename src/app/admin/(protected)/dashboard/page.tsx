@@ -27,6 +27,8 @@ import { ReportDialog } from "./_components/report-dialog";
 import { CollectionAreaChart } from "@/components/layout/admin/collection-area-chart";
 import { AmenityReservationCalendar } from "@/components/layout/admin/amenity-reservation-calendar";
 import { ReservationStatusChart } from "@/components/layout/admin/reservation-status-chart";
+import { AmenityEarningsChart } from "@/components/layout/admin/amenity-earnings-chart";
+import { MonthlyDuesPieChart } from "@/components/layout/admin/monthly-dues-pie-chart";
 import {
   RecentTransactionsTable,
   RecentTransaction,
@@ -356,21 +358,21 @@ const Page = () => {
       {/* Screen View */}
       <div className="space-y-6 no-print">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-2 flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">
+      <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between gap-4">
+        <div className="space-y-2 flex-1 min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
             Dashboard Overview
           </h1>
-          <p className="text-muted-foreground max-w-6xl">
+          <p className="text-sm sm:text-base text-muted-foreground max-w-6xl">
             Welcome to the Promenade Residence management dashboard. Monitor key
             metrics, track account activity, and manage community operations
             from this centralized view. Get real-time insights into residents,
             transactions, and property status.
           </p>
         </div>
-        <div className="flex items-center gap-4 shrink-0">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-4 w-full sm:w-auto shrink-0">
           <Select value={period} onValueChange={(value) => setPeriod(value as Period)}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-full sm:w-[180px]">
               <SelectValue placeholder="Select period" />
             </SelectTrigger>
             <SelectContent>
@@ -380,9 +382,10 @@ const Page = () => {
               <SelectItem value="annually">Annually</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={() => setReportDialogOpen(true)} variant="primary" className="shrink-0 no-print">
+          <Button onClick={() => setReportDialogOpen(true)} variant="primary" className="w-full sm:w-auto shrink-0 no-print">
             <IconFileReport className="h-4 w-4" />
-            <span>Create Report</span>
+            <span className="hidden sm:inline">Create Report</span>
+            <span className="sm:hidden">Report</span>
           </Button>
         </div>
       </div>
@@ -400,7 +403,7 @@ const Page = () => {
       )}
 
       {/* Statistics Cards */}
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {statistics.map((stat) => {
           const IconComponent = stat.icon;
           return (
@@ -426,21 +429,23 @@ const Page = () => {
       </div>
 
       {/* Charts */}
-      <div className="grid md:grid-cols-10 gap-6">
-        <div className="md:col-span-7 min-w-0">
+      <div className="grid gap-6 lg:grid-cols-10">
+        <div className="lg:col-span-7 min-w-0 space-y-6">
           <CollectionAreaChart />
-          <div className="mt-6">
+          <AmenityEarningsChart />
+          <div className="w-full overflow-x-auto">
             <RecentTransactionsTable
               transactions={recentTransactions}
               onCtaClick={() => window.location.href = "/admin/transactions"}
             />
           </div>
         </div>
-        <div className="md:col-span-3 space-y-6 min-w-0">
+        <div className="lg:col-span-3 space-y-6 min-w-0">
           <div className="w-full overflow-x-auto">
             <AmenityReservationCalendar />
           </div>
           <ReservationStatusChart />
+          <MonthlyDuesPieChart />
         </div>
       </div>
     </div>

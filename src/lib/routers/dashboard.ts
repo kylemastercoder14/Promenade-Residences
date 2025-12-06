@@ -368,5 +368,94 @@ export const dashboardRouter = createTRPCRouter({
         collection: monthlyData[index + 1] || 0,
       }));
     }),
+
+  getAmenityEarnings: protectedProcedure
+    .input(
+      z.object({
+        year: z.number().int().min(2000).max(3000),
+        month: z.number().int().min(1).max(12).optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      const startDate = input.month
+        ? new Date(input.year, input.month - 1, 1)
+        : new Date(input.year, 0, 1);
+      const endDate = input.month
+        ? new Date(input.year, input.month, 0, 23, 59, 59, 999)
+        : new Date(input.year, 11, 31, 23, 59, 59, 999);
+
+      const reservations = await prisma.amenityReservation.findMany({
+        where: {
+          isArchived: false,
+          status: "APPROVED",
+          date: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+      });
+
+      // Group by amenity type
+      const earningsByAmenity: Record<string, number> = {
+        COURT: 0,
+        GAZEBO: 0,
+      };
+
+      reservations.forEach((reservation) => {
+        const amenity = reservation.amenity;
+        earningsByAmenity[amenity] =
+          (earningsByAmenity[amenity] || 0) + (reservation.amountPaid || 0);
+      });
+
+      return [
+        {
+          amenity: "Basketball Court",
+          earnings: earningsByAmenity.COURT || 0,
+        },
+        {
+          amenity: "Gazebo",
+          earnings: earningsByAmenity.GAZEBO || 0,
+        },
+      ];
+    }),
+
+  getMonthlyDuesPaidUnpaid: protectedProcedure
+    .input(
+      z.object({
+        year: z.number().int().min(2000).max(3000),
+        month: z.number().int().min(1).max(12).optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      const startDate = input.month
+        ? new Date(input.year, input.month - 1, 1)
+        : new Date(input.year, 0, 1);
+      const endDate = input.month
+        ? new Date(input.year, input.month, 0, 23, 59, 59, 999)
+        : new Date(input.year, 11, 31, 23, 59, 59, 999);
+
+      const monthlyDues = await prisma.monthlyDue.findMany({
+        where: {
+          createdAt: {
+            gte: startDate,
+            lte: endDate,
+          },
+        },
+      });
+
+      const paid = monthlyDues
+        .filter((due) => due.status === "APPROVED")
+        .reduce((sum, due) => sum + due.amountPaid, 0);
+
+      const unpaid = monthlyDues
+        .filter((due) => due.status !== "APPROVED")
+        .reduce((sum, due) => sum + (due.amountToPay - due.amountPaid), 0);
+
+      return {
+        paid,
+        unpaid: Math.max(0, unpaid),
+        total: paid + Math.max(0, unpaid),
+      };
+    }),
 });
 

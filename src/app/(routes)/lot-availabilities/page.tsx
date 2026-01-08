@@ -6,10 +6,12 @@ import { LandingFooter } from "@/components/landing/footer";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Info, MapPin } from "lucide-react";
+import { Info, MapPin, Monitor } from "lucide-react";
 import { InteractiveMap } from "@/components/interactive-map";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 // Legend items reflect the status/availability used in the mapping data
 const legend = [
@@ -20,6 +22,7 @@ const legend = [
 
 const LotAvailabilities = () => {
   const trpc = useTRPC();
+  const isMobile = useIsMobile();
   const [searchInput, setSearchInput] = useState("");
   const [searchTerm, setSearchTerm] = useState<string | null>(null);
 
@@ -46,11 +49,11 @@ const LotAvailabilities = () => {
           <div className="rounded-4xl bg-white p-6 shadow-lg">
             <div className="flex flex-col gap-4">
               <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.4em] text-[#1f5c34]">
+                <p className="text-xs sm:text-sm font-semibold uppercase tracking-[0.4em] text-[#1f5c34]">
                   Community Map
                 </p>
-                <h1 className="text-3xl font-serif uppercase text-[#1c2a1d]">Lot Availabilities</h1>
-                <p className="text-sm text-[#4f5f53]">
+                <h1 className="text-2xl sm:text-3xl font-serif uppercase text-[#1c2a1d]">Lot Availabilities</h1>
+                <p className="text-xs sm:text-sm text-[#4f5f53]">
                   Use the search and controls to inspect available lots, reservations, and sold slots across the village.
                 </p>
               </div>
@@ -78,10 +81,32 @@ const LotAvailabilities = () => {
               </div>
 
               <div className="flex flex-col gap-4">
+                {/* Mobile Disclaimer */}
+                {isMobile && (
+                  <div className="flex items-start gap-3 rounded-2xl border-2 border-amber-200 bg-amber-50/80 p-4">
+                    <Monitor className="size-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="flex-1 space-y-1">
+                      <p className="text-sm font-semibold text-amber-900">
+                        Better Experience on Larger Screens
+                      </p>
+                      <p className="text-xs text-amber-800">
+                        For the best experience browsing lot availabilities, we recommend using a laptop or desktop computer. The interactive map works best with a mouse and larger screen for easier navigation and lot selection.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="flex flex-wrap items-start gap-3 rounded-2xl border border-[#e4e7de] bg-[#f9faf7] p-4">
                   <div className="flex items-center gap-2 text-sm text-[#4f5f53]">
-                    <Info className="size-4 text-[#1f5c34]" />
-                    Click on any lot to view details. Use mouse wheel to zoom, drag to pan, or use the controls on the map.
+                    <Info className="size-4 text-[#1f5c34] shrink-0" />
+                    <span className={cn(
+                      "text-xs sm:text-sm"
+                    )}>
+                      {isMobile
+                        ? "Tap on any lot to view details. Use pinch to zoom, or use the zoom controls on the map."
+                        : "Click on any lot to view details. Use mouse wheel to zoom, drag to pan, or use the controls on the map."
+                      }
+                    </span>
                   </div>
                 </div>
 
@@ -140,7 +165,13 @@ const LotAvailabilities = () => {
 
               <div className="rounded-[28px] border border-[#e4e7de] bg-linear-to-br from-white to-[#f3f5ef] p-4 shadow-inner">
                 <div className="rounded-2xl border border-[#cbd2c7] bg-white/70 p-4">
-                  <div className="h-[600px] w-full rounded-xl border border-[#e4e4e0] bg-[#f9faf7] relative" style={{ overflow: "hidden" }}>
+                  <div
+                    className={cn(
+                      "w-full rounded-xl border border-[#e4e4e0] bg-[#f9faf7] relative",
+                      "h-[70vh] min-h-[500px] sm:h-[600px]"
+                    )}
+                    style={{ overflow: "hidden" }}
+                  >
                     <InteractiveMap
                       svgPath="/Promenade_Map.svg"
                       className="w-full h-full"
@@ -149,7 +180,10 @@ const LotAvailabilities = () => {
                   </div>
                 </div>
                 <p className="mt-3 text-xs text-[#7a867b] text-center">
-                  Interactive map with zoom and pan functionality. Click on any lot to view details, or use the zoom controls to navigate.
+                  {isMobile
+                    ? "Interactive map with zoom and pan. Tap lots to view details, or use zoom controls."
+                    : "Interactive map with zoom and pan functionality. Click on any lot to view details, or use the zoom controls to navigate."
+                  }
                 </p>
               </div>
             </div>

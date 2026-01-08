@@ -47,6 +47,7 @@ const getFullName = (resident: ResidentWithMap) => {
 export const columns: ColumnDef<ResidentWithMap>[] = [
   {
     accessorKey: "filtered",
+    id: "filtered",
     header: ({ column }) => {
       return (
         <Button
@@ -72,7 +73,10 @@ export const columns: ColumnDef<ResidentWithMap>[] = [
         </div>
       );
     },
-    filterFn: (row, filterValue) => {
+    filterFn: (row, id, filterValue) => {
+      if (!filterValue || typeof filterValue !== "string") {
+        return true;
+      }
       const resident = row.original;
       const fullName = getFullName(resident).toLowerCase();
       const email = (resident.emailAddress ?? "").toLowerCase();

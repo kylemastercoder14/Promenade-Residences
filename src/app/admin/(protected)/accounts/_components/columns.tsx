@@ -63,15 +63,18 @@ export const columns: ColumnDef<User>[] = [
         </div>
       );
     },
-    filterFn: (row, filterValue) => {
+    filterFn: (row, id, filterValue) => {
+      if (!filterValue || typeof filterValue !== "string") {
+        return true;
+      }
       const name = (row.original.name ?? "").toLowerCase();
       const email = (row.original.email ?? "").toLowerCase();
-      const id = (row.original.id ?? "").toLowerCase();
+      const userId = (row.original.id ?? "").toLowerCase();
       const search = filterValue.toLowerCase();
 
       return (
         name.includes(search) ||
-        id.includes(search) ||
+        userId.includes(search) ||
         email.includes(search)
       );
     },

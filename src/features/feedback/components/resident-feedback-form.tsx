@@ -133,7 +133,7 @@ export const ResidentFeedbackForm = ({ onSuccess, variant = "default" }: Residen
   const isSubmitting = createFeedback.isPending || form.formState.isSubmitting;
 
   return (
-    <div className={variant === "modal" ? "pb-6" : "rounded-3xl border border-[#dfe3d9] bg-white p-6 shadow-sm"}>
+    <div>
       {variant === "default" && (
         <div className="mb-6 space-y-1">
           <p className="text-sm font-semibold uppercase tracking-wide text-[#1d402a]">

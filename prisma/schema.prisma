@@ -87,9 +87,9 @@ model Maps {
   street        String
   lotSize       Float
   houseType     String
-  minPrice      Float
-  maxPrice      Float
-  paymentMethod String
+  minPrice      Float?
+  maxPrice      Float?
+  paymentMethod String?
   attachmentUrl String
   availability  String
   notes         String?

@@ -39,6 +39,7 @@ const getRelationshipLabel = (relationship: string) => {
 export const columns: ColumnDef<VehicleRegistration>[] = [
   {
     accessorKey: "filtered",
+    id: "filtered",
     header: ({ column }) => {
       return (
         <Button
@@ -63,7 +64,10 @@ export const columns: ColumnDef<VehicleRegistration>[] = [
         </div>
       );
     },
-    filterFn: (row, filterValue) => {
+    filterFn: (row, id, filterValue) => {
+      if (!filterValue || typeof filterValue !== "string") {
+        return true;
+      }
       const brand = (row.original.brand ?? "").toLowerCase();
       const model = (row.original.model ?? "").toLowerCase();
       const plateNumber = (row.original.plateNumber ?? "").toLowerCase();

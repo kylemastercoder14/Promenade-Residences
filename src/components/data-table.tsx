@@ -105,7 +105,7 @@ export function DataTable<TData, TValue>({
   React.useEffect(() => {
     const timeout = setTimeout(() => {
       table.getColumn("filtered")?.setFilterValue(search);
-    }, 100);
+    }, 500);
     return () => clearTimeout(timeout);
   }, [search, table]);
 

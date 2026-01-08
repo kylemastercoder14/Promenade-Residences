@@ -241,21 +241,30 @@ export const LotDetailsDialog = ({ open, onOpenChange, lotDetails, isLoading, bl
                         {headOfHousehold.typeOfResidency === "RESIDENT" ? "Owner" : "Tenant"}
                       </Badge>
                     </div>
-                    {headOfHousehold.contactNumber && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Phone className="size-3" />
-                        <span>{headOfHousehold.contactNumber}</span>
-                      </div>
-                    )}
-                    {headOfHousehold.emailAddress && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Mail className="size-3" />
-                        <span>{headOfHousehold.emailAddress}</span>
-                      </div>
+                    {/* Only show contact information for properties that are For Sale or For Rent */}
+                    {(lotDetails.availability.toLowerCase().includes("sale") ||
+                      lotDetails.availability.toLowerCase().includes("rent")) && (
+                      <>
+                        {headOfHousehold.contactNumber && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Phone className="size-3" />
+                            <span>{headOfHousehold.contactNumber}</span>
+                          </div>
+                        )}
+                        {headOfHousehold.emailAddress && (
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Mail className="size-3" />
+                            <span>{headOfHousehold.emailAddress}</span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
                 )}
-                {otherResidents.length > 0 && (
+                {/* Only show other household members if property is not For Sale or For Rent */}
+                {otherResidents.length > 0 &&
+                 !lotDetails.availability.toLowerCase().includes("sale") &&
+                 !lotDetails.availability.toLowerCase().includes("rent") && (
                   <div className="space-y-2">
                     <p className="text-xs font-medium text-muted-foreground">Other Household Members:</p>
                     {otherResidents.map((resident) => (
@@ -266,12 +275,6 @@ export const LotDetailsDialog = ({ open, onOpenChange, lotDetails, isLoading, bl
                             {resident.typeOfResidency === "RESIDENT" ? "Owner" : "Tenant"}
                           </Badge>
                         </div>
-                        {resident.contactNumber && (
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                            <Phone className="size-3" />
-                            <span>{resident.contactNumber}</span>
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>

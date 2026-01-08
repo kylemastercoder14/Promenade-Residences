@@ -45,34 +45,13 @@ const formSchema = z.object({
   availability: z.string().optional(),
   notes: z.string().optional(),
 }).superRefine((data, ctx) => {
-  // If not amenity, houseType, minPrice, maxPrice, paymentMethod, and availability are required
+  // If not amenity, houseType and availability are required
   if (!data.isAmenity) {
     if (!data.houseType || data.houseType === "") {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "House type is required",
         path: ["houseType"],
-      });
-    }
-    if (data.minPrice === undefined || data.minPrice === null) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Minimum price is required",
-        path: ["minPrice"],
-      });
-    }
-    if (data.maxPrice === undefined || data.maxPrice === null) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Maximum price is required",
-        path: ["maxPrice"],
-      });
-    }
-    if (!data.paymentMethod || data.paymentMethod === "") {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Payment method is required",
-        path: ["paymentMethod"],
       });
     }
     if (!data.availability || data.availability === "") {
@@ -141,9 +120,9 @@ export const MapForm = ({ initialData }: { initialData: Maps | null }) => {
       availability: data.isAmenity ? "Amenity" : (data.availability || ""),
       lotNo: data.isAmenity ? undefined : (data.lotNo ? data.lotNo : undefined),
       houseType: data.isAmenity ? "" : (data.houseType || ""),
-      minPrice: data.isAmenity ? 0 : (data.minPrice || 0),
-      maxPrice: data.isAmenity ? 0 : (data.maxPrice || 0),
-      paymentMethod: data.isAmenity ? "" : (data.paymentMethod || ""),
+      minPrice: data.isAmenity ? 0 : (data.minPrice ?? 0),
+      maxPrice: data.isAmenity ? 0 : (data.maxPrice ?? 0),
+      paymentMethod: data.isAmenity ? "" : (data.paymentMethod || undefined),
     };
 
     // Only update if initialData exists AND has a valid id (not empty string)
@@ -204,8 +183,8 @@ export const MapForm = ({ initialData }: { initialData: Maps | null }) => {
                           form.setValue("availability", "Amenity");
                           form.setValue("lotNo", "");
                           form.setValue("houseType", "");
-                          form.setValue("minPrice", 0);
-                          form.setValue("maxPrice", 0);
+                          form.setValue("minPrice", undefined);
+                          form.setValue("maxPrice", undefined);
                           form.setValue("paymentMethod", "");
                         }
                       }}
@@ -370,7 +349,7 @@ export const MapForm = ({ initialData }: { initialData: Maps | null }) => {
                     <FormItem>
                       <FormLabel>
                         Minimum Price (₱)
-                        <span className="text-destructive">*</span>
+                        <span className="text-muted-foreground">(optional)</span>
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -379,7 +358,7 @@ export const MapForm = ({ initialData }: { initialData: Maps | null }) => {
                           placeholder="e.g. 500000"
                           {...field}
                           value={field.value ?? ""}
-                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                         />
                       </FormControl>
                       <FormMessage />
@@ -393,7 +372,7 @@ export const MapForm = ({ initialData }: { initialData: Maps | null }) => {
                     <FormItem>
                       <FormLabel>
                         Maximum Price (₱)
-                        <span className="text-destructive">*</span>
+                        <span className="text-muted-foreground">(optional)</span>
                       </FormLabel>
                       <FormControl>
                         <Input
@@ -402,7 +381,7 @@ export const MapForm = ({ initialData }: { initialData: Maps | null }) => {
                           placeholder="e.g. 1000000"
                           {...field}
                           value={field.value ?? ""}
-                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                          onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                         />
                       </FormControl>
                       <FormMessage />
@@ -420,7 +399,7 @@ export const MapForm = ({ initialData }: { initialData: Maps | null }) => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        Payment Method <span className="text-destructive">*</span>
+                        Payment Method <span className="text-muted-foreground">(optional)</span>
                       </FormLabel>
                       <FormControl>
                         <Input

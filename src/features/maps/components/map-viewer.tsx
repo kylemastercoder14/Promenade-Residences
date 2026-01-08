@@ -631,12 +631,12 @@ export const MapViewer = ({ maps }: MapViewerProps) => {
                       <p className="text-sm font-semibold text-muted-foreground">House Type</p>
                       <p className="text-base">{selectedMap.houseType}</p>
                     </div>
-                    {selectedMap.minPrice && selectedMap.maxPrice && (
+                    {selectedMap.minPrice != null && selectedMap.maxPrice != null && (
                       <div>
                         <p className="text-sm font-semibold text-muted-foreground">Price Range</p>
                         <p className="text-base">
-                          ₱{selectedMap.minPrice.toLocaleString()}
-                          {selectedMap.maxPrice > selectedMap.minPrice && ` - ₱${selectedMap.maxPrice.toLocaleString()}`}
+                          ₱{selectedMap.minPrice!.toLocaleString()}
+                          {selectedMap.maxPrice! > selectedMap.minPrice! && ` - ₱${selectedMap.maxPrice!.toLocaleString()}`}
                         </p>
                       </div>
                     )}

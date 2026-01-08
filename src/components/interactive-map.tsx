@@ -1218,7 +1218,7 @@ export const InteractiveMap = ({ svgPath, className = "", legend = [] }: Interac
             )}
 
             {/* Interaction Mode Toggle - Bottom Center */}
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-20 bg-white/95 backdrop-blur-sm rounded-lg border border-[#e4e7de] shadow-md p-1">
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-2 z-20 bg-white/95 backdrop-blur-sm rounded-lg border flex-wrap border-[#e4e7de] shadow-md p-1">
               <Button
                 size="sm"
                 variant={interactionMode === "pan" ? "default" : "ghost"}

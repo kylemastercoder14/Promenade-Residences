@@ -120,9 +120,9 @@ export const MapForm = ({ initialData }: { initialData: Maps | null }) => {
       availability: data.isAmenity ? "Amenity" : (data.availability || ""),
       lotNo: data.isAmenity ? undefined : (data.lotNo ? data.lotNo : undefined),
       houseType: data.isAmenity ? "" : (data.houseType || ""),
-      minPrice: data.isAmenity ? 0 : (data.minPrice ?? 0),
-      maxPrice: data.isAmenity ? 0 : (data.maxPrice ?? 0),
-      paymentMethod: data.isAmenity ? "" : (data.paymentMethod || undefined),
+      minPrice: data.isAmenity ? undefined : (data.minPrice ?? undefined),
+      maxPrice: data.isAmenity ? undefined : (data.maxPrice ?? undefined),
+      paymentMethod: data.isAmenity ? undefined : (data.paymentMethod || undefined),
     };
 
     // Only update if initialData exists AND has a valid id (not empty string)

@@ -30,9 +30,9 @@ interface LotDetails {
   street: string;
   lotSize: number;
   houseType: string;
-  minPrice: number;
-  maxPrice: number;
-  paymentMethod: string;
+  minPrice: number | null;
+  maxPrice: number | null;
+  paymentMethod: string | null;
   availability: string;
   notes: string | null;
   residents: Resident[];
@@ -208,19 +208,21 @@ export const LotDetailsDialog = ({ open, onOpenChange, lotDetails, isLoading, bl
                 <span className="text-muted-foreground">House Type:</span>
                 <p className="font-medium">{lotDetails.houseType}</p>
               </div>
-              {lotDetails.minPrice > 0 && (
+              {lotDetails.minPrice && lotDetails.minPrice > 0 && (
                 <div>
                   <span className="text-muted-foreground">Price Range:</span>
                   <p className="font-medium">
                     ₱{lotDetails.minPrice.toLocaleString()}
-                    {lotDetails.maxPrice > lotDetails.minPrice && ` - ₱${lotDetails.maxPrice.toLocaleString()}`}
+                    {lotDetails.maxPrice && lotDetails.maxPrice > lotDetails.minPrice && ` - ₱${lotDetails.maxPrice.toLocaleString()}`}
                   </p>
                 </div>
               )}
-              <div>
-                <span className="text-muted-foreground">Payment Method:</span>
-                <p className="font-medium">{lotDetails.paymentMethod}</p>
-              </div>
+              {lotDetails.paymentMethod && (
+                <div>
+                  <span className="text-muted-foreground">Payment Method:</span>
+                  <p className="font-medium">{lotDetails.paymentMethod}</p>
+                </div>
+              )}
             </div>
           </div>
 

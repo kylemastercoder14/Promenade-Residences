@@ -147,10 +147,10 @@ const LotAvailabilities = () => {
                                 <span>Lot size: {lot.lotSize} sqm</span>
                               )}
                               {lot.houseType && <span>Type: {lot.houseType}</span>}
-                              {lot.minPrice > 0 && (
+                              {lot.minPrice && lot.minPrice > 0 && (
                                 <span>
                                   Price: ₱{lot.minPrice.toLocaleString()}
-                                  {lot.maxPrice > lot.minPrice &&
+                                  {lot.maxPrice && lot.maxPrice > lot.minPrice &&
                                     `–₱${lot.maxPrice.toLocaleString()}`}
                                 </span>
                               )}

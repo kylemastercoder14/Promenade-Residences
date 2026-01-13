@@ -29,7 +29,7 @@ interface LotDetails {
   lotNo: string | null;
   street: string;
   lotSize: number;
-  houseType: string;
+  houseType: string | null;
   minPrice: number | null;
   maxPrice: number | null;
   paymentMethod: string | null;
@@ -203,10 +203,12 @@ export const LotDetailsDialog = ({ open, onOpenChange, lotDetails, isLoading, bl
                 <span className="text-muted-foreground">Lot Size:</span>
                 <p className="font-medium">{lotDetails.lotSize} sqm</p>
               </div>
-              <div>
-                <span className="text-muted-foreground">House Type:</span>
-                <p className="font-medium">{lotDetails.houseType}</p>
-              </div>
+              {lotDetails.houseType && (
+                <div>
+                  <span className="text-muted-foreground">House Type:</span>
+                  <p className="font-medium">{lotDetails.houseType}</p>
+                </div>
+              )}
               {/* Only show price range and payment method if not occupied */}
               {!lotDetails.availability.toLowerCase().includes("occupied") && (
                 <>

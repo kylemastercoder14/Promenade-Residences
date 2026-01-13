@@ -86,7 +86,7 @@ model Maps {
   lotNo         String?
   street        String
   lotSize       Float
-  houseType     String
+  houseType     String?
   minPrice      Float?
   maxPrice      Float?
   paymentMethod String?

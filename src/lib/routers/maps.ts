@@ -188,7 +188,7 @@ export const mapsRouter = createTRPCRouter({
         lotNo: z.string().optional(),
         street: z.string(),
         lotSize: z.number(),
-        houseType: z.string(),
+        houseType: z.string().optional(),
         minPrice: z.number().optional(),
         maxPrice: z.number().optional(),
         paymentMethod: z.string().optional(),

@@ -131,13 +131,16 @@ export const mapsRouter = createTRPCRouter({
         lotNo: z.string().optional(),
         street: z.string(),
         lotSize: z.number(),
-        houseType: z.string(),
+        houseType: z.string().optional(),
         minPrice: z.number().optional(),
         maxPrice: z.number().optional(),
         paymentMethod: z.string().optional(),
         attachmentUrl: z.string(),
         availability: z.string(),
         notes: z.string().optional(),
+        contactName: z.string().optional(),
+        contactNumber: z.string().optional(),
+        contactEmail: z.string().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -154,6 +157,9 @@ export const mapsRouter = createTRPCRouter({
           attachmentUrl: input.attachmentUrl,
           availability: input.availability,
           notes: input.notes,
+          contactName: input.contactName,
+          contactNumber: input.contactNumber,
+          contactEmail: input.contactEmail,
         },
       });
 
@@ -189,6 +195,9 @@ export const mapsRouter = createTRPCRouter({
         attachmentUrl: z.string(),
         availability: z.string(),
         notes: z.string().optional(),
+        contactName: z.string().optional(),
+        contactNumber: z.string().optional(),
+        contactEmail: z.string().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -207,6 +216,9 @@ export const mapsRouter = createTRPCRouter({
           attachmentUrl: updateData.attachmentUrl,
           availability: updateData.availability,
           notes: updateData.notes,
+          contactName: updateData.contactName,
+          contactNumber: updateData.contactNumber,
+          contactEmail: updateData.contactEmail,
         },
       });
 

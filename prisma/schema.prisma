@@ -93,6 +93,9 @@ model Maps {
   attachmentUrl String
   availability  String
   notes         String?
+  contactName   String?
+  contactNumber String?
+  contactEmail  String?
   residents     Resident[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @default(now()) @updatedAt

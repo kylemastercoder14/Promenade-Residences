@@ -160,7 +160,6 @@ export const LotDetailsDialog = ({ open, onOpenChange, lotDetails, isLoading, bl
   }
 
   const headOfHousehold = lotDetails.residents.find((r) => r.isHead);
-  const otherResidents = lotDetails.residents.filter((r) => !r.isHead);
 
   const formatName = (resident: Resident) => {
     const parts = [resident.firstName];
@@ -208,79 +207,63 @@ export const LotDetailsDialog = ({ open, onOpenChange, lotDetails, isLoading, bl
                 <span className="text-muted-foreground">House Type:</span>
                 <p className="font-medium">{lotDetails.houseType}</p>
               </div>
-              {lotDetails.minPrice && lotDetails.minPrice > 0 && (
-                <div>
-                  <span className="text-muted-foreground">Price Range:</span>
-                  <p className="font-medium">
-                    ₱{lotDetails.minPrice.toLocaleString()}
-                    {lotDetails.maxPrice && lotDetails.maxPrice > lotDetails.minPrice && ` - ₱${lotDetails.maxPrice.toLocaleString()}`}
-                  </p>
-                </div>
-              )}
-              {lotDetails.paymentMethod && (
-                <div>
-                  <span className="text-muted-foreground">Payment Method:</span>
-                  <p className="font-medium">{lotDetails.paymentMethod}</p>
-                </div>
+              {/* Only show price range and payment method if not occupied */}
+              {!lotDetails.availability.toLowerCase().includes("occupied") && (
+                <>
+                  {lotDetails.minPrice && lotDetails.minPrice > 0 && (
+                    <div>
+                      <span className="text-muted-foreground">Price Range:</span>
+                      <p className="font-medium">
+                        ₱{lotDetails.minPrice.toLocaleString()}
+                        {lotDetails.maxPrice && lotDetails.maxPrice > lotDetails.minPrice && ` - ₱${lotDetails.maxPrice.toLocaleString()}`}
+                      </p>
+                    </div>
+                  )}
+                  {lotDetails.paymentMethod && (
+                    <div>
+                      <span className="text-muted-foreground">Payment Method:</span>
+                      <p className="font-medium">{lotDetails.paymentMethod}</p>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>
 
-          {/* Owner/Resident Information */}
-          {lotDetails.residents.length > 0 && (
+          {/* Owner/Resident Information - Only show for For Sale or For Rent (not Occupied) */}
+          {lotDetails.residents.length > 0 &&
+           !lotDetails.availability.toLowerCase().includes("occupied") &&
+           (lotDetails.availability.toLowerCase().includes("sale") ||
+            lotDetails.availability.toLowerCase().includes("rent")) &&
+           headOfHousehold && (
             <>
               <Separator />
               <div className="space-y-3">
                 <h3 className="text-sm font-semibold text-[#1f5c34] flex items-center gap-2">
                   <User className="size-4" />
-                  {headOfHousehold ? "Owner/Resident" : "Residents"}
+                  Contact Information
                 </h3>
-                {headOfHousehold && (
-                  <div className="rounded-lg border border-[#e4e7de] bg-[#f9faf7] p-4 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium">{formatName(headOfHousehold)}</p>
-                      <Badge variant="outline" className="text-xs">
-                        {headOfHousehold.typeOfResidency === "RESIDENT" ? "Owner" : "Tenant"}
-                      </Badge>
+                <div className="rounded-lg border border-[#e4e7de] bg-[#f9faf7] p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium">{formatName(headOfHousehold)}</p>
+                    <Badge variant="outline" className="text-xs">
+                      {headOfHousehold.typeOfResidency === "RESIDENT" ? "Owner" : "Tenant"}
+                    </Badge>
+                  </div>
+                  {/* Show contact number or email address */}
+                  {headOfHousehold.contactNumber && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Phone className="size-3" />
+                      <span>{headOfHousehold.contactNumber}</span>
                     </div>
-                    {/* Only show contact information for properties that are For Sale or For Rent */}
-                    {(lotDetails.availability.toLowerCase().includes("sale") ||
-                      lotDetails.availability.toLowerCase().includes("rent")) && (
-                      <>
-                        {headOfHousehold.contactNumber && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Phone className="size-3" />
-                            <span>{headOfHousehold.contactNumber}</span>
-                          </div>
-                        )}
-                        {headOfHousehold.emailAddress && (
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Mail className="size-3" />
-                            <span>{headOfHousehold.emailAddress}</span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </div>
-                )}
-                {/* Only show other household members if property is not For Sale or For Rent */}
-                {otherResidents.length > 0 &&
-                 !lotDetails.availability.toLowerCase().includes("sale") &&
-                 !lotDetails.availability.toLowerCase().includes("rent") && (
-                  <div className="space-y-2">
-                    <p className="text-xs font-medium text-muted-foreground">Other Household Members:</p>
-                    {otherResidents.map((resident) => (
-                      <div key={resident.id} className="rounded-lg border border-[#e4e7de] bg-white p-3">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium">{formatName(resident)}</p>
-                          <Badge variant="outline" className="text-xs">
-                            {resident.typeOfResidency === "RESIDENT" ? "Owner" : "Tenant"}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                  )}
+                  {headOfHousehold.emailAddress && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Mail className="size-3" />
+                      <span>{headOfHousehold.emailAddress}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}

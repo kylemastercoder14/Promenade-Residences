@@ -44,6 +44,9 @@ const formSchema = z.object({
   attachmentUrl: z.string().min(1, "Attachment URL is required"),
   availability: z.string().optional(),
   notes: z.string().optional(),
+  contactName: z.string().optional(),
+  contactNumber: z.string().optional(),
+  contactEmail: z.string().optional(),
 }).superRefine((data, ctx) => {
   // If not amenity, houseType and availability are required
   if (!data.isAmenity) {
@@ -61,6 +64,14 @@ const formSchema = z.object({
         path: ["availability"],
       });
     }
+  }
+  // Validate email if provided
+  if (data.contactEmail && data.contactEmail !== "" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contactEmail)) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Invalid email address",
+      path: ["contactEmail"],
+    });
   }
 });
 
@@ -91,6 +102,9 @@ export const MapForm = ({ initialData }: { initialData: Maps | null }) => {
       attachmentUrl: initialData?.attachmentUrl || "",
       availability: initialData?.availability || "",
       notes: initialData?.notes || "",
+      contactName: initialData?.contactName || "",
+      contactNumber: initialData?.contactNumber || "",
+      contactEmail: initialData?.contactEmail || "",
     },
   });
 
@@ -119,10 +133,13 @@ export const MapForm = ({ initialData }: { initialData: Maps | null }) => {
       notes: data.notes || "",
       availability: data.isAmenity ? "Amenity" : (data.availability || ""),
       lotNo: data.isAmenity ? undefined : (data.lotNo ? data.lotNo : undefined),
-      houseType: data.isAmenity ? "" : (data.houseType || ""),
+      houseType: data.isAmenity ? undefined : (data.houseType || undefined),
       minPrice: data.isAmenity ? undefined : (data.minPrice ?? undefined),
       maxPrice: data.isAmenity ? undefined : (data.maxPrice ?? undefined),
       paymentMethod: data.isAmenity ? undefined : (data.paymentMethod || undefined),
+      contactName: data.isAmenity ? undefined : (data.contactName || undefined),
+      contactNumber: data.isAmenity ? undefined : (data.contactNumber || undefined),
+      contactEmail: data.isAmenity ? undefined : (data.contactEmail || undefined),
     };
 
     // Only update if initialData exists AND has a valid id (not empty string)
@@ -186,6 +203,9 @@ export const MapForm = ({ initialData }: { initialData: Maps | null }) => {
                           form.setValue("minPrice", undefined);
                           form.setValue("maxPrice", undefined);
                           form.setValue("paymentMethod", "");
+                          form.setValue("contactName", "");
+                          form.setValue("contactNumber", "");
+                          form.setValue("contactEmail", "");
                         }
                       }}
                     />
@@ -437,6 +457,72 @@ export const MapForm = ({ initialData }: { initialData: Maps | null }) => {
                           <SelectItem value="For sale">For Sale</SelectItem>
                         </SelectContent>
                       </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            )}
+
+            {!isAmenity && (
+              <div className="space-y-3">
+                <h3 className="text-sm font-semibold text-[#1f5c34]">Contact Information</h3>
+                <div className="grid lg:grid-cols-2 grid-cols-1 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="contactName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Contact Name <span className="text-muted-foreground">(optional)</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            disabled={isSubmitting}
+                            placeholder="e.g. John Doe"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="contactNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          Contact Number <span className="text-muted-foreground">(optional)</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            disabled={isSubmitting}
+                            placeholder="e.g. +63 912 345 6789"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="contactEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        Contact Email <span className="text-muted-foreground">(optional)</span>
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          disabled={isSubmitting}
+                          placeholder="e.g. john.doe@example.com"
+                          {...field}
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

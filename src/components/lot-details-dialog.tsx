@@ -35,6 +35,9 @@ interface LotDetails {
   paymentMethod: string | null;
   availability: string;
   notes: string | null;
+  contactName: string | null;
+  contactNumber: string | null;
+  contactEmail: string | null;
   residents: Resident[];
 }
 
@@ -159,15 +162,6 @@ export const LotDetailsDialog = ({ open, onOpenChange, lotDetails, isLoading, bl
     );
   }
 
-  const headOfHousehold = lotDetails.residents.find((r) => r.isHead);
-
-  const formatName = (resident: Resident) => {
-    const parts = [resident.firstName];
-    if (resident.middleName) parts.push(resident.middleName);
-    parts.push(resident.lastName);
-    if (resident.suffix) parts.push(resident.suffix);
-    return parts.join(" ");
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -232,12 +226,11 @@ export const LotDetailsDialog = ({ open, onOpenChange, lotDetails, isLoading, bl
             </div>
           </div>
 
-          {/* Owner/Resident Information - Only show for For Sale or For Rent (not Occupied) */}
-          {lotDetails.residents.length > 0 &&
-           !lotDetails.availability.toLowerCase().includes("occupied") &&
+          {/* Contact Information - Only show for For Sale or For Rent (not Occupied) */}
+          {!lotDetails.availability.toLowerCase().includes("occupied") &&
            (lotDetails.availability.toLowerCase().includes("sale") ||
             lotDetails.availability.toLowerCase().includes("rent")) &&
-           headOfHousehold && (
+           (lotDetails.contactName || lotDetails.contactNumber || lotDetails.contactEmail) && (
             <>
               <Separator />
               <div className="space-y-3">
@@ -246,23 +239,21 @@ export const LotDetailsDialog = ({ open, onOpenChange, lotDetails, isLoading, bl
                   Contact Information
                 </h3>
                 <div className="rounded-lg border border-[#e4e7de] bg-[#f9faf7] p-4 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">{formatName(headOfHousehold)}</p>
-                    <Badge variant="outline" className="text-xs">
-                      {headOfHousehold.typeOfResidency === "RESIDENT" ? "Owner" : "Tenant"}
-                    </Badge>
-                  </div>
-                  {/* Show contact number or email address */}
-                  {headOfHousehold.contactNumber && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Phone className="size-3" />
-                      <span>{headOfHousehold.contactNumber}</span>
+                  {lotDetails.contactName && (
+                    <div className="flex items-center justify-between">
+                      <p className="font-medium">{lotDetails.contactName}</p>
                     </div>
                   )}
-                  {headOfHousehold.emailAddress && (
+                  {lotDetails.contactNumber && (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Phone className="size-3" />
+                      <span>{lotDetails.contactNumber}</span>
+                    </div>
+                  )}
+                  {lotDetails.contactEmail && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Mail className="size-3" />
-                      <span>{headOfHousehold.emailAddress}</span>
+                      <span>{lotDetails.contactEmail}</span>
                     </div>
                   )}
                 </div>
